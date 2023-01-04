@@ -8,7 +8,7 @@ from gym.error import DependencyNotInstalled
 # Assume the robot cannot go backwards and does not stop moving (have max speed of 0.2 in assignments)
 MAX_SPEED = 0.8
 MIN_SPEED = 0.05
-MAX_W = np.pi /4 # USE?
+MAX_W = np.pi /4 # TODO: USE?
 
 # Constants used for indexing.
 X = 0
@@ -18,8 +18,11 @@ YAW = 2
 # Permissable distance from goal
 GOAL_DISTANCE = 0.001
 GOAL_ANGLE = 0.01
-MAX_SENSOR_DISTANCE = 5.0
+MAX_SENSOR_DISTANCE = 2.0
 
+# Robot and obstacle initilization constants
+NUM_OBSTACLES = 0
+INIT_DISTANCE_FROM_GOAL = 0.5
 
 class SimpleRobotEnviroment(Env):
 
@@ -33,46 +36,60 @@ class SimpleRobotEnviroment(Env):
         # define your environment
         # action space, observation space
 
-        # Custom
         # Set the grid size that we're operating in, use continuous gridspace
-        self.grid_size = 2
+        self.grid_size = 2.5
+
         # List of obstacles in the environment
-        self.obstacles = np.array([])
+        self.obstacles = []
+        for i in range(NUM_OBSTACLES):
+            # Set now and randomly initialise later in code
+            self.obstacles.append(Obstacle(0.0, 0.0, 0.1))
+
         # TODO: randomly initiliase, ensure it does not clash with obstacles and is reachable (i.e. the robot is still fully in the grid if it reaches the space)
-        # Goal position, randomly initiliase and ensure that it does not clash with any obstacles
-        self.goal_position = np.array([1.0,1.0,-np.pi/2])
-        # Robot start position, randomly initiliase and ensure that it does not clash with any obstacles
+        # Goal position, set now and will randomly initiliase and ensure that it does not clash with any obstacles
+        self.goal_position = np.array([1.5,1.5,np.pi])
+
+        # Robot start position, set now and randomly initiliase and ensure that it does not clash with any obstacles
         self.num_sensors = 7
         self.sensor_angles = np.linspace(-np.pi/2, np.pi/2, self.num_sensors)
         # Robot position needs to be a float
         self.robot = SimpleRobot(np.array([0.5,0.5,0.0]), 0.105 / 2)
 
-        # Define observation space, [distance to goal, angle to goal, sensor readings (check how many from assignment/Prorok code) (paper uses 30)]
-        observation_shape = self.num_sensors+2
+        # Randomly initialise goal, robot and obstacle positions
+        # self.reset_positions()
+
+        # Define observation space, [current position, goal position, sensor readings (check how many from assignment/Prorok code) (paper uses 30)]
+        observation_shape = self.num_sensors + 6
         obs_min = np.full((observation_shape,), 0.0)
-        # min distance, min angle
-        # TODO what should the max and min for angle between be
-        obs_min[0], obs_min[1] = 0.0, -2*np.pi
+        # min x position robot, min y position robot, min yaw robot, need to account for observing values when we have moved outside the grid
+        obs_min[0], obs_min[1], obs_min[2] = 0.0, 0.0, -np.pi
+        # min x position goal, min y position goal, min yaw goal
+        obs_min[3], obs_min[4], obs_min[5] = 0.0 + self.robot.radius, 0.0 + self.robot.radius, -np.pi
+
         obs_max = np.full((observation_shape,), MAX_SENSOR_DISTANCE)
-        # max distance (distance between two opposite corners of the square), max angle
-        obs_max[0], obs_max[1] = np.sqrt(2)*self.grid_size, 2*np.pi
+        # max x position robot, max y position robot, max yaw robot, need to account for observing values when we move outside the grid
+        obs_max[0], obs_max[1], obs_max[2] = self.grid_size, self.grid_size, np.pi
+        # max x position goal, max y position goal, max yaw goal
+        obs_max[3], obs_max[4], obs_max[5] = self.grid_size - self.robot.radius, self.grid_size - self.robot.radius, np.pi
         self.observation_space = Box(low = obs_min, high = obs_max, shape=(observation_shape,), dtype = np.float32)
 
         # Define action spac, [forward velocity, angular velocity] 
         # CHANGE: MAX_W?
         self.action_space = Box(low=np.array([MIN_SPEED, -np.pi]), high=np.array([MAX_SPEED, np.pi]), shape=(2,), dtype=np.float32)
 
-
         # For rendering
         self.path = [np.copy(self.robot.pose[:2])]
         self.steps_beyond_terminated = None
         self.render_mode = render_mode
 
-        self.offset = 30
-        self.screen_width = 600 + self.offset
-        self.screen_height = 600 + self.offset
+        self.scaled_offset = 30
+        self.screen_width = 600 + self.scaled_offset
+        self.screen_height = 600 + self.scaled_offset
         self.screen = None
         self.clock = None
+        self.scale = (self.screen_width - self.scaled_offset) / self.grid_size
+        # divide by two to spread spacing amongst all sides
+        self.offset = (self.scaled_offset / self.scale)/2
   
     def step(self, action):
         if self.steps_beyond_terminated is not None:
@@ -86,21 +103,29 @@ class SimpleRobotEnviroment(Env):
         # Take action 
         # action = [u,w]
         u, w = action[0], action[1]
-        self.robot.update_pose(u,w)
+        self.robot.update_pose(u,w,self.grid_size)
         self.path.append(np.copy(self.robot.pose[:2]))
 
         # Compute observations
-        # [distance, angle, sensor readings ...]
+        # [robot position x, robot position y, robot position YAW, goal position x, goal position y, goal position YAW, sensor readings ...]
         observation = self.observation()
 
         # Compute reward
-        # TODO: more sophisticated reward function
-        reward = -observation[0]
+        robot_x_y = self.robot.pose[:2]
+        goal_position_x_y = self.goal_position[:2]
+        # Distance to goal
+        distance = np.linalg.norm(goal_position_x_y - robot_x_y)
+        # Difference between current angle and goal angle, smallest angle either anti-clockwise or clockwise
+        angle_diff = min(np.abs(self.goal_position[YAW] - self.robot.pose[YAW]), 2*np.pi - np.abs(self.goal_position[YAW] - self.robot.pose[YAW]))
+        # Scale the outputs so the angle difference doesn't overwhelm the reward function, distance and angle contribute the same amount to the reward function
+        max_distance = np.linalg.norm(np.array([self.grid_size, self.grid_size]))
+        # print("Dist ", distance, " angle_diff: ", angle_diff)
+        reward = - (distance/(max_distance) + angle_diff/(2*np.pi))*self.grid_size
 
         # Compute done
         done = False
-        # if robot is outside the grid
-        if (self.robot.pose[X] + self.robot.radius >= self.grid_size) or (self.robot.pose[Y] + self.robot.radius >= self.grid_size) or (self.robot.pose[X] < 0) or (self.robot.pose[Y] < 0):
+        # if robot is outside the grid (collides with a wall)
+        if (self.robot.pose[X] + self.robot.radius >= self.grid_size) or (self.robot.pose[Y] + self.robot.radius >= self.grid_size) or (self.robot.pose[X] <= 0.0 + self.robot.radius) or (self.robot.pose[Y] <= 0.0 + self.robot.radius):
             done = True
             reward -= 50
         else:
@@ -109,11 +134,11 @@ class SimpleRobotEnviroment(Env):
             if collision:
                 done = True
                 reward -= 50
-            # if the robot reaches the goal (is within some distance of the goal)
-            elif observation[0] <= GOAL_DISTANCE:
+            # if the robot reaches the goal (is within some distance of the goal position)
+            elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
                 done = True
                 reward += 50
-        # Allow us to through warning and stop unexpected behaviour
+        # Allow us to throw warning and stop unexpected behaviour
         if done:
             self.steps_beyond_terminated = 0
 
@@ -129,14 +154,9 @@ class SimpleRobotEnviroment(Env):
     def reset(self):
         # reset your environment
 
-        # Reset goal position
-        self.goal_position = np.array([1.0,1.0,0.0])
-
-        # Reset robot position
+        # Reset goal, robot and obstacle positions
+        # self.reset_positions()
         self.robot.set_pose(np.array([0.5,0.5,0.0]))
-
-        # Reset obstacles
-        self.obstacles = np.array([])
 
         # Random bits and bobs
         self.steps_beyond_terminated = None
@@ -148,6 +168,7 @@ class SimpleRobotEnviroment(Env):
 
     def render(self):
         # render your environment (can be a visualisation/print)
+        # Use rendering format of example Gym environments
         if self.render_mode is None:
             logger.warn(
                 "You are calling render method without specifying any render mode. "
@@ -176,8 +197,6 @@ class SimpleRobotEnviroment(Env):
         if self.clock is None:
             self.clock = pygame.time.Clock()
 
-        world_width = self.grid_size
-        scale = self.screen_width / world_width
         self.surf = pygame.Surface((self.screen_width, self.screen_height))
         self.surf.fill((255, 255, 255))
 
@@ -188,8 +207,8 @@ class SimpleRobotEnviroment(Env):
             return x_circle, y_circle
 
         # draw the box
-        max_size_scale_offset = int(self.grid_size*scale) - self.offset
-        min_size_scale_offset = 0 + self.offset
+        max_size_scale_offset = int((self.grid_size + self.offset)*self.scale)
+        min_size_scale_offset = int(0 + self.offset*self.scale) 
         gfxdraw.hline(self.surf, min_size_scale_offset, max_size_scale_offset, min_size_scale_offset, (0,0,0))
         gfxdraw.hline(self.surf, min_size_scale_offset, max_size_scale_offset, max_size_scale_offset, (0,0,0))
         gfxdraw.vline(self.surf, min_size_scale_offset, min_size_scale_offset, max_size_scale_offset, (0,0,0))
@@ -197,50 +216,45 @@ class SimpleRobotEnviroment(Env):
         
 
         # draw goal
-        goal_x = self.goal_position[X]*scale + self.offset
-        goal_y = self.goal_position[Y]*scale + self.offset
-        goal_r = self.robot.radius*scale
-        # print(goal_x, goal_y, goal_r)
+        goal_x = int((self.goal_position[X]+ self.offset)*self.scale)
+        goal_y = int((self.goal_position[Y] + self.offset)*self.scale)
+        goal_r = int(self.robot.radius*self.scale)
         # may need to cast value to int
-        gfxdraw.aacircle(self.surf, int(goal_x), int(goal_y), int(goal_r), (52, 175, 61),)
+        gfxdraw.aacircle(self.surf, goal_x, goal_y, goal_r, (52, 175, 61),)
         # plot orientation at goal
         x_goal_circle, y_goal_circle = get_point_on_circle(self.goal_position[X], self.goal_position[Y], self.robot.radius, self.goal_position[YAW])
-        x_goal_circle = x_goal_circle*scale + self.offset
-        y_goal_circle = y_goal_circle*scale + self.offset
-        gfxdraw.line(self.surf, int(goal_x), int(goal_y), int(x_goal_circle), int(y_goal_circle), (0,0,0))
+        x_goal_circle = int((x_goal_circle + self.offset)*self.scale)
+        y_goal_circle = int((y_goal_circle + self.offset)*self.scale)
+        gfxdraw.line(self.surf, goal_x, goal_y, x_goal_circle, y_goal_circle, (0,0,0))
 
         # draw robot
-        robot_x = self.robot.pose[X]*scale + self.offset
-        robot_y = self.robot.pose[Y]*scale + self.offset
-        robot_r = self.robot.radius*scale
+        robot_x = int((self.robot.pose[X] + self.offset)*self.scale)
+        robot_y = int((self.robot.pose[Y] + self.offset)*self.scale)
+        robot_r = int(self.robot.radius*self.scale)
         # may need to cast value to int
-        gfxdraw.aacircle(self.surf, int(robot_x), int(robot_y), int(robot_r), (159, 197, 236),)
-        gfxdraw.filled_circle(self.surf, int(robot_x), int(robot_y), int(robot_r), (159, 197, 236),)
+        gfxdraw.aacircle(self.surf, robot_x, robot_y, robot_r, (159, 197, 236),)
+        gfxdraw.filled_circle(self.surf, robot_x, robot_y, robot_r, (159, 197, 236),)
         # plot orientation of robot
         x_robot_circle, y_robot_circle = get_point_on_circle(self.robot.pose[X], self.robot.pose[Y], self.robot.radius, self.robot.pose[YAW])
-        x_robot_circle = x_robot_circle*scale + self.offset
-        y_robot_circle = y_robot_circle*scale + self.offset
-        gfxdraw.line(self.surf, int(robot_x), int(robot_y), int(x_robot_circle), int(y_robot_circle), (0,0,0))
+        x_robot_circle = int((x_robot_circle + self.offset)*self.scale)
+        y_robot_circle = int((y_robot_circle + self.offset)*self.scale)
+        gfxdraw.line(self.surf, robot_x, robot_y, x_robot_circle, y_robot_circle, (0,0,0))
 
         #draw obstacles
         for o in self.obstacles:
-            o_x = o.x_coord*scale + self.offset
-            o_y = o.y_coord*scale + self.offset
-            o_r = o.radius*scale
-            # may need to cast value to int
-            gfxdraw.aacircle(self.surf, int(o_x), int(o_y), int(o_r), (0, 102, 204),)
-            gfxdraw.filled_circle(self.surf, int(o_x), int(o_y), int(o_r), (0, 102, 204),)
+            o_x = int((o.x_coord + self.offset)*self.scale)
+            o_y = int((o.y_coord + self.offset)*self.scale)
+            o_r = int(o.radius*self.scale)
+            gfxdraw.aacircle(self.surf, o_x, o_y, o_r, (0, 102, 204),)
+            gfxdraw.filled_circle(self.surf, o_x, o_y, o_r, (0, 102, 204),)
 
         # draw path
-        # print(self.path)
         for i in range(1,len(self.path)):
-            c_pos_x = self.path[i][X]*scale + self.offset
-            # print(c_pos_x)
-            c_pos_y = self.path[i][Y]*scale + self.offset
-            p_pos_x = self.path[i-1][X]*scale + self.offset
-            # print(p_pos_x)
-            p_pos_y = self.path[i-1][Y]*scale + self.offset
-            gfxdraw.line(self.surf, int(p_pos_x), int(p_pos_y), int(c_pos_x), int(c_pos_y), (255,0,0))
+            c_pos_x = int((self.path[i][X] + self.offset)*self.scale)
+            c_pos_y = int((self.path[i][Y] + self.offset)*self.scale)
+            p_pos_x = int((self.path[i-1][X] + self.offset)*self.scale)
+            p_pos_y = int((self.path[i-1][Y] + self.offset)*self.scale)
+            gfxdraw.line(self.surf, p_pos_x, p_pos_y, c_pos_x, c_pos_y, (255,0,0))
 
         self.surf = pygame.transform.flip(self.surf, False, True)
         self.screen.blit(self.surf, (0, 0))
@@ -264,8 +278,7 @@ class SimpleRobotEnviroment(Env):
   
 
     def ray_trace(self, angle, pose):
-        # TODO limit distance
-        """Returns the distance to the first obstacle from the particle. From course exercises"""
+        """Returns the distance to the first obstacle from the particle. From course exercises, with sensor distance limiting"""
         wall_off = np.pi/2.
         cyl_off = np.pi
         def intersection_segment(x1, x2, y1, y2):
@@ -310,26 +323,68 @@ class SimpleRobotEnviroment(Env):
 
         # distance to the obstacles
         if len(self.obstacles) > 0:
-            d_obstacles = np.min([intersection_cylinder(o.x_pos, o.y_pos, o.radius) for o in self.obstacles])
+            d_obstacles = np.min([intersection_cylinder(o.x_coord, o.y_coord, o.radius) for o in self.obstacles])
             d = min(d, d_obstacles)
 
-        return d
+        # Remove inf and limit the sensor readings to the max sensor range
+        return min(d, MAX_SENSOR_DISTANCE)
 
+    # observation is [robot position, goal position, sensor readings] (based on flocking example)
     def observation(self):
-        # print("OBSERVATION", self.robot.pose)
-        robot_x_y = self.robot.pose[:2]
-        goal_position_x_y = self.goal_position[:2]
-        # Distance to goal
-        distance = np.linalg.norm( goal_position_x_y - robot_x_y)
-        # Angle to goal
-        line_angle = np.arctan2(goal_position_x_y[Y]- robot_x_y[Y], goal_position_x_y[X] - robot_x_y[X])
-        # negative means distance is anticlockwise, postive means difference is clockwise
-        goal_angle = self.robot.pose[YAW] - line_angle
+        # # print("OBSERVATION", self.robot.pose)
+        # robot_x_y = self.robot.pose[:2]
+        # goal_position_x_y = self.goal_position[:2]
+        # # Distance to goal
+        # distance = np.linalg.norm( goal_position_x_y - robot_x_y)
+        # # Angle to goal
+        # line_angle = np.arctan2(goal_position_x_y[Y]- robot_x_y[Y], goal_position_x_y[X] - robot_x_y[X])
+        # # negative means distance is anticlockwise, postive means difference is clockwise
+        # goal_angle = self.robot.pose[YAW] - line_angle
         sensor_readings = [self.ray_trace(a, self.robot.pose) for a in self.sensor_angles]
-        #TODO make inf into max reading?
-        filter_sensor_readings = [MAX_SENSOR_DISTANCE if x == float('inf') else x for x in sensor_readings]
-        return np.array([distance, goal_angle] + filter_sensor_readings)
+        # Make sensor reading in MAX_DISTANCE if infinity or over the max sensor reading distance
+        # filter_sensor_readings = [MAX_SENSOR_DISTANCE if x == float('inf') else x for x in sensor_readings]
+        # return np.concatenate((self.robot.pose, self.goal_position, filter_sensor_readings))
+        return np.concatenate((self.robot.pose, self.goal_position, sensor_readings))
 
+    def reset_positions(self):
+        # TODO perhaps create goal and robot positions first to ensure we don't get stuck in random corners
+        # Set random positions for obstacles
+        for i in range(NUM_OBSTACLES):
+            collide = True
+            while collide:
+                rand_pos = np.random.uniform(low=self.obstacles[i].radius, high=self.grid_size-self.obstacles[i].radius, size=(2))
+                collide = False
+                # Check that the obstacle does not collide with other obstacles
+                for j in range(i):
+                    o = self.obstacles[j]
+                    if np.linalg.norm(o.position - rand_pos) < (o.radius + self.obstacles[i].radius):
+                        collide = True
+                        break
+            self.obstacles[i].set_position(rand_pos)
+    
+        # minimum x and y values 
+        def get_random_robot_pos(min, max): 
+            collide = True
+            while collide:
+                rand_pos = np.random.uniform(low=min, high=max, size=(2))
+                self.robot.set_pose(np.append(rand_pos,[0.0]))
+                collide = False
+                # Check that the position does not collide with other obstacles
+                for o in self.obstacles:
+                    collide = o.collide(self.robot)
+                    if collide:
+                        break
+            return np.append(rand_pos, [np.random.uniform(low=-np.pi, high=np.pi)])
+
+        # Set random goal position, ensuring it does not clash with obstacles
+        self.goal_position = get_random_robot_pos((self.robot.radius, self.robot.radius), (self.grid_size-self.robot.radius, self.grid_size-self.robot.radius))
+        
+        # Set random robot position, a certain distance away from the goal
+        min_x = max(0.0 + self.robot.radius, self.goal_position[X] - INIT_DISTANCE_FROM_GOAL)
+        max_x = min(self.grid_size-self.robot.radius, self.goal_position[X] + INIT_DISTANCE_FROM_GOAL)
+        min_y = max(0.0 + self.robot.radius, self.goal_position[Y] - INIT_DISTANCE_FROM_GOAL)
+        max_y = min(self.grid_size-self.robot.radius, self.goal_position[Y] + INIT_DISTANCE_FROM_GOAL)
+        self.robot.set_pose(get_random_robot_pos((min_x,min_y), (max_x, max_y)))
 
 
 # Class representing a circular obstacle
@@ -352,8 +407,16 @@ class Obstacle():
     def radius(self):
         return self._radius
 
+    @property
+    def position(self):
+        return np.array([self._x_pos, self._y_pos])
+
+    def set_position(self, position):
+        self._x_pos = position[X]
+        self._y_pos = position[Y]
+
     def collide(self, robot):
-        if np.linalg.norm(robot.pose[:2] - np.array([self.x_coord, self.y_coord])) - robot.radius <= self.radius:
+        if np.linalg.norm(robot.pose[:2] - self.position) - robot.radius <= self.radius:
             return True
         return False
 
@@ -365,9 +428,9 @@ class SimpleRobot():
          self._pose = pose
          self._radius = radius
     
-    # Use semi-implicit Euler method, can use substepping if necessary
+    # Use semi-implicit Euler method, can use substepping if necessary, following code from Prorok package
     # Use equations from lecture slides to update position
-    def update_pose(self, u, w):
+    def update_pose(self, u, w, max_pos):
         # print(self.pose)
         # print(u, w)
         dt = 0.1
@@ -380,6 +443,10 @@ class SimpleRobot():
         self._pose[X] += dt*u*np.cos(self.pose[YAW])
         self._pose[Y] += dt*u*np.sin(self.pose[YAW])
         # print(self.pose)
+
+        # Limit robot positions to remaining inside the map
+        clipped = np.clip(self.pose[:2], 0.0, max_pos)
+        self._pose[X], self._pose[Y] = clipped[X], clipped[Y]
 
     def set_pose(self, pose):
         self._pose = pose
@@ -395,11 +462,11 @@ class SimpleRobot():
 
 if __name__ == "__main__":
     env = SimpleRobotEnviroment(render_mode="rgb_array")
-    for i in range(20):
-        env.step(env.action_space.sample())
+    for i in range(5):
+        print(env.step(env.action_space.sample()))
     # print(env.reset())
     # print(env.reset())
-    env.reset()
+    # env.reset()
 
     # robot = SimpleRobot(np.array([0.5,0.5,0]),0.1)
     # robot.update_pose(0.1, np.pi)

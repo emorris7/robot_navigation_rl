@@ -7,6 +7,7 @@ from gym.wrappers import TimeLimit
 from gym import make
 from ray.tune.registry import register_env
 from gym.envs.registration import register
+import numpy as np
 
 # for the custom callback
 from typing import Dict
@@ -40,13 +41,17 @@ class GoalCallbacks(DefaultCallbacks):
     def on_episode_end(self, worker: RolloutWorker, base_env: BaseEnv,
                        policies: Dict[str, Policy], episode: MultiAgentEpisode,
                        **kwargs):
-        final_distance = episode.last_observation_for()[0]
-        final_angle = episode.last_observation_for()[1]
+        final_x = episode.last_observation_for()[0]
+        final_y = episode.last_observation_for()[1]
+        final_yaw = episode.last_observation_for()[2]
+        goal_x = episode.last_observation_for()[3]
+        goal_y = episode.last_observation_for()[4]
+        goal_yaw = episode.last_observation_for()[5]
         # reached_goal = (final_distance <= GOAL_DISTANCE) and (final_angle <= GOAL_ANGLE)
         # print("episode {} ended with length {} and reached goal is {}".format(
         #     episode.episode_id, episode.length, reached_goal))
-        episode.custom_metrics["final_distance"] = final_distance
-        episode.custom_metrics["final_angle"] = final_angle
+        episode.custom_metrics["final_distance"] = np.linalg.norm(np.array([goal_x, goal_y]) - np.array([final_x,final_y]))
+        episode.custom_metrics["final_angle_difference"] = min(np.abs(goal_yaw - final_yaw), 2*np.pi - np.abs(goal_yaw - final_yaw))
 
 
 if __name__ == '__main__':
@@ -61,14 +66,14 @@ if __name__ == '__main__':
     )
 
     # print(algo.config.horizon)
-    print("m")
+    # print("m")
 
-    for i in range(1):
+    for i in range(200):
         print(i)
         result = algo.train()
-        print(result["custom_metrics"])
-        print(pretty_print(result))
+        # print(result["custom_metrics"])
+        # print(pretty_print(result))
 
-        # if i % 5 == 0:
-        #     checkpoint_dir = algo.save()
-        #     print(f"Checkpoint saved in directory {checkpoint_dir}")
+        if i % 5 == 0:
+            checkpoint_dir = algo.save()
+            print(f"Checkpoint saved in directory {checkpoint_dir}")
