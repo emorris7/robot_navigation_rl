@@ -58,22 +58,25 @@ if __name__ == '__main__':
 
     algo = (
         PPOConfig()
-        .rollouts(num_rollout_workers=1,horizon=200)
+        # .training(lr=1e-4)
+        # .training(model={'use_lstm':True})
+        # .training(train_batch_size=60000, sgd_minibatch_size=4096)
+        # Increase horizon from 200 to 400 as robot was ending before reaching goal
+        .rollouts(num_rollout_workers=1,horizon=600)
         .resources(num_gpus=0)
         .environment(SimpleRobotEnviroment, env_config={"render_mode":"rgb_array"})
         .callbacks(GoalCallbacks)
         .build()
     )
-
     # print(algo.config.horizon)
     # print("m")
 
-    for i in range(200):
+    for i in range(120):
         print(i)
         result = algo.train()
         # print(result["custom_metrics"])
         # print(pretty_print(result))
 
-        if i % 5 == 0:
+        if i % 10 == 0:
             checkpoint_dir = algo.save()
             print(f"Checkpoint saved in directory {checkpoint_dir}")

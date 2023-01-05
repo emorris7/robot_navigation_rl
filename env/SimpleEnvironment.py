@@ -7,7 +7,8 @@ from gym.error import DependencyNotInstalled
 
 # Assume the robot cannot go backwards and does not stop moving (have max speed of 0.2 in assignments)
 MAX_SPEED = 0.8
-MIN_SPEED = 0.05
+# TODO: Change from 0.05
+MIN_SPEED = 0.0
 MAX_W = np.pi /4 # TODO: USE?
 
 # Constants used for indexing.
@@ -19,10 +20,13 @@ YAW = 2
 GOAL_DISTANCE = 0.001
 GOAL_ANGLE = 0.01
 MAX_SENSOR_DISTANCE = 2.0
+# When to start factoring in angle difference to the reward
+# Checked with 3.0 and 1.0 and 2.0 worked best
+GOAL_REWARD_DISTANCE = 0.2
 
 # Robot and obstacle initilization constants
 NUM_OBSTACLES = 0
-INIT_DISTANCE_FROM_GOAL = 0.5
+INIT_DISTANCE_FROM_GOAL = 0.7
 
 class SimpleRobotEnviroment(Env):
 
@@ -37,23 +41,23 @@ class SimpleRobotEnviroment(Env):
         # action space, observation space
 
         # Set the grid size that we're operating in, use continuous gridspace
-        self.grid_size = 2.5
+        self.grid_size = 2.0
 
         # List of obstacles in the environment
         self.obstacles = []
         for i in range(NUM_OBSTACLES):
             # Set now and randomly initialise later in code
-            self.obstacles.append(Obstacle(0.0, 0.0, 0.1))
+            self.obstacles.append(Obstacle(0.8, 0.7, 0.1))
 
         # TODO: randomly initiliase, ensure it does not clash with obstacles and is reachable (i.e. the robot is still fully in the grid if it reaches the space)
         # Goal position, set now and will randomly initiliase and ensure that it does not clash with any obstacles
-        self.goal_position = np.array([1.5,1.5,np.pi])
+        self.goal_position = np.array([1.0,1.0,np.pi])
 
         # Robot start position, set now and randomly initiliase and ensure that it does not clash with any obstacles
         self.num_sensors = 7
         self.sensor_angles = np.linspace(-np.pi/2, np.pi/2, self.num_sensors)
         # Robot position needs to be a float
-        self.robot = SimpleRobot(np.array([0.5,0.5,0.0]), 0.105 / 2)
+        self.robot = SimpleRobot(np.array([0.7,0.7,0.0]), 0.105 / 2)
 
         # Randomly initialise goal, robot and obstacle positions
         # self.reset_positions()
@@ -120,22 +124,26 @@ class SimpleRobotEnviroment(Env):
         # Scale the outputs so the angle difference doesn't overwhelm the reward function, distance and angle contribute the same amount to the reward function
         max_distance = np.linalg.norm(np.array([self.grid_size, self.grid_size]))
         # print("Dist ", distance, " angle_diff: ", angle_diff)
-        reward = - (distance/(max_distance) + angle_diff/(2*np.pi))*self.grid_size
+        # reward = - (distance/(max_distance) + angle_diff/(2*np.pi))*self.grid_size
+        reward = - (distance/max_distance) if distance >= GOAL_REWARD_DISTANCE else - ((distance/max_distance)*0.5 + (angle_diff/(2*np.pi))*0.5)
 
         # Compute done
         done = False
         # if robot is outside the grid (collides with a wall)
         if (self.robot.pose[X] + self.robot.radius >= self.grid_size) or (self.robot.pose[Y] + self.robot.radius >= self.grid_size) or (self.robot.pose[X] <= 0.0 + self.robot.radius) or (self.robot.pose[Y] <= 0.0 + self.robot.radius):
             done = True
-            reward -= 50
+            # TODO: 50
+            reward -= 25
         else:
             # if the robot collides with an object
             collision = np.any([o.collide(self.robot) for o in self.obstacles])
             if collision:
                 done = True
-                reward -= 50
+                # TODO 50
+                reward -= 25
             # if the robot reaches the goal (is within some distance of the goal position)
             elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
+            # elif distance <= GOAL_DISTANCE:
                 done = True
                 reward += 50
         # Allow us to throw warning and stop unexpected behaviour
@@ -156,7 +164,7 @@ class SimpleRobotEnviroment(Env):
 
         # Reset goal, robot and obstacle positions
         # self.reset_positions()
-        self.robot.set_pose(np.array([0.5,0.5,0.0]))
+        self.robot.set_pose(np.array([0.7,0.7,0.0]))
 
         # Random bits and bobs
         self.steps_beyond_terminated = None
