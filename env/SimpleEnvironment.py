@@ -125,7 +125,9 @@ class SimpleRobotEnviroment(Env):
         max_distance = np.linalg.norm(np.array([self.grid_size, self.grid_size]))
         # print("Dist ", distance, " angle_diff: ", angle_diff)
         # reward = - (distance/(max_distance) + angle_diff/(2*np.pi))*self.grid_size
-        reward = - (distance/max_distance) if distance >= GOAL_REWARD_DISTANCE else - ((distance/max_distance)*0.5 + (angle_diff/(2*np.pi))*0.5)
+        normalized_dist = distance/max_distance
+        reward_proportion = np.tanh(normalized_dist)/GOAL_REWARD_DISTANCE
+        reward = - normalized_dist if distance >= GOAL_REWARD_DISTANCE else - (normalized_dist*reward_proportion + (angle_diff/(2*np.pi))*(1-reward_proportion))
 
         # Compute done
         done = False
