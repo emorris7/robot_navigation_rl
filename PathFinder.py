@@ -8,6 +8,7 @@ from gym import make
 from ray.tune.registry import register_env
 from gym.envs.registration import register
 import numpy as np
+from ray.rllib.algorithms.algorithm import Algorithm
 
 # for the custom callback
 from typing import Dict
@@ -71,12 +72,14 @@ if __name__ == '__main__':
     # print(algo.config.horizon)
     # print("m")
 
-    for i in range(120):
+    # algo.restore("/Users/emilymorris/ray_results/scaled_reward_continued_2023-01-05_12-44-21_aq8hjcq/checkpoint_000311/")
+    num_episodes = 200
+    for i in range(num_episodes):
         print(i)
         result = algo.train()
         # print(result["custom_metrics"])
         # print(pretty_print(result))
 
-        if i % 10 == 0:
+        if i % 10 == 0 or i==num_episodes-1:
             checkpoint_dir = algo.save()
             print(f"Checkpoint saved in directory {checkpoint_dir}")

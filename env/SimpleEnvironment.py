@@ -17,7 +17,7 @@ Y = 1
 YAW = 2
 
 # Permissable distance from goal
-GOAL_DISTANCE = 0.001
+GOAL_DISTANCE = 0.01
 GOAL_ANGLE = 0.01
 MAX_SENSOR_DISTANCE = 2.0
 # When to start factoring in angle difference to the reward
@@ -126,23 +126,35 @@ class SimpleRobotEnviroment(Env):
         # print("Dist ", distance, " angle_diff: ", angle_diff)
         # reward = - (distance/(max_distance) + angle_diff/(2*np.pi))*self.grid_size
         normalized_dist = distance/max_distance
-        reward_proportion = np.tanh(normalized_dist)/GOAL_REWARD_DISTANCE
-        reward = - normalized_dist if distance >= GOAL_REWARD_DISTANCE else - (normalized_dist*reward_proportion + (angle_diff/(2*np.pi))*(1-reward_proportion))
+        # reward_proportion = np.tanh(normalized_dist)/GOAL_REWARD_DISTANCE
+        reward_proportion = 0.5
+        # reward = - normalized_dist if distance >= GOAL_REWARD_DISTANCE else (-0.9 * (normalized_dist*reward_proportion + (angle_diff/(np.pi))*(1-reward_proportion)))
+        norm_goal_reward_distance = GOAL_REWARD_DISTANCE/max_distance
+        reward = - normalized_dist if distance > GOAL_REWARD_DISTANCE else \
+            (- (normalized_dist*reward_proportion + (angle_diff/(np.pi))*norm_goal_reward_distance*(1-reward_proportion)))
+        # print("Angle diff ", angle_diff, " angle robot ", self.goal_position[YAW], " angle goal ", self.robot.pose[YAW])
+        # reward = -distance if distance >= GOAL_REWARD_DISTANCE else (-distance+np.pi-angle_diff)
+        # reward = -distance-(angle_diff/np.pi)
+        # if reward > 10:
+        #     print("Angle diff: ", angle_diff)
+        #     print("Distance: ", distance)
 
         # Compute done
         done = False
+        # Large negative reward to ensure agent doesn't just learn to crash into the wall
+        collision_reward = -1200
         # if robot is outside the grid (collides with a wall)
         if (self.robot.pose[X] + self.robot.radius >= self.grid_size) or (self.robot.pose[Y] + self.robot.radius >= self.grid_size) or (self.robot.pose[X] <= 0.0 + self.robot.radius) or (self.robot.pose[Y] <= 0.0 + self.robot.radius):
             done = True
             # TODO: 50
-            reward -= 25
+            reward = collision_reward
         else:
             # if the robot collides with an object
             collision = np.any([o.collide(self.robot) for o in self.obstacles])
             if collision:
                 done = True
                 # TODO 50
-                reward -= 25
+                reward = collision_reward
             # if the robot reaches the goal (is within some distance of the goal position)
             elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
             # elif distance <= GOAL_DISTANCE:
@@ -159,6 +171,8 @@ class SimpleRobotEnviroment(Env):
         if self.render_mode == "human":
             self.render()
 
+        # if reward > 10:
+        #     print("Big reward: ", reward)
         return np.array(observation), reward, done, info_dict
 
     def reset(self):
