@@ -1,6 +1,7 @@
 from ray.rllib.algorithms.ppo import PPOConfig
 from ray.tune.logger import pretty_print
 from env.SimpleEnvironment import SimpleRobotEnviroment
+from env.SimpleEnvironment_condensed_obs import SimpleRobotEnviromentCO
 from env.SimpleEnvironment import GOAL_DISTANCE, GOAL_ANGLE
 import ray.rllib.utils as u
 from gym.wrappers import TimeLimit
@@ -54,8 +55,35 @@ class GoalCallbacks(DefaultCallbacks):
         episode.custom_metrics["final_distance"] = np.linalg.norm(np.array([goal_x, goal_y]) - np.array([final_x,final_y]))
         episode.custom_metrics["final_angle_difference"] = min(np.abs(goal_yaw - final_yaw), 2*np.pi - np.abs(goal_yaw - final_yaw))
 
+        
+class GoalCallbacksCO(DefaultCallbacks):
+
+    def on_episode_end(self, worker: RolloutWorker, base_env: BaseEnv,
+                       policies: Dict[str, Policy], episode: MultiAgentEpisode,
+                       **kwargs):
+        final_distance = episode.last_observation_for()[0]
+        final_angle_diff = abs(episode.last_observation_for()[2])
+        # reached_goal = (final_distance <= GOAL_DISTANCE) and (final_angle <= GOAL_ANGLE)
+        # print("episode {} ended with length {} and reached goal is {}".format(
+        #     episode.episode_id, episode.length, reached_goal))
+        episode.custom_metrics["final_distance"] = final_distance
+        episode.custom_metrics["final_angle_difference"] = final_angle_diff
+
 
 if __name__ == '__main__':
+
+    # algo = (
+    #     PPOConfig()
+    #     # .training(lr=1e-4)
+    #     # .training(model={'use_lstm':True})
+    #     # .training(train_batch_size=60000, sgd_minibatch_size=4096)
+    #     # Increase horizon from 200 to 400 as robot was ending before reaching goal
+    #     .rollouts(num_rollout_workers=1,horizon=600)
+    #     .resources(num_gpus=0)
+    #     .environment(SimpleRobotEnviroment, env_config={"render_mode":"rgb_array"})
+    #     .callbacks(GoalCallbacks)
+    #     .build()
+    # )
 
     algo = (
         PPOConfig()
@@ -65,8 +93,8 @@ if __name__ == '__main__':
         # Increase horizon from 200 to 400 as robot was ending before reaching goal
         .rollouts(num_rollout_workers=1,horizon=600)
         .resources(num_gpus=0)
-        .environment(SimpleRobotEnviroment, env_config={"render_mode":"rgb_array"})
-        .callbacks(GoalCallbacks)
+        .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
+        .callbacks(GoalCallbacksCO)
         .build()
     )
     # print(algo.config.horizon)

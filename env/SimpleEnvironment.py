@@ -47,7 +47,7 @@ class SimpleRobotEnviroment(Env):
         self.obstacles = []
         for i in range(NUM_OBSTACLES):
             # Set now and randomly initialise later in code
-            self.obstacles.append(Obstacle(0.8, 0.7, 0.1))
+            self.obstacles.append(Obstacle(0.6, 0.85, 0.1))
 
         # TODO: randomly initiliase, ensure it does not clash with obstacles and is reachable (i.e. the robot is still fully in the grid if it reaches the space)
         # Goal position, set now and will randomly initiliase and ensure that it does not clash with any obstacles
@@ -147,14 +147,14 @@ class SimpleRobotEnviroment(Env):
         if (self.robot.pose[X] + self.robot.radius >= self.grid_size) or (self.robot.pose[Y] + self.robot.radius >= self.grid_size) or (self.robot.pose[X] <= 0.0 + self.robot.radius) or (self.robot.pose[Y] <= 0.0 + self.robot.radius):
             done = True
             # TODO: 50
-            reward = collision_reward
+            reward += collision_reward
         else:
             # if the robot collides with an object
             collision = np.any([o.collide(self.robot) for o in self.obstacles])
             if collision:
                 done = True
                 # TODO 50
-                reward = collision_reward
+                reward += collision_reward
             # if the robot reaches the goal (is within some distance of the goal position)
             elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
             # elif distance <= GOAL_DISTANCE:
