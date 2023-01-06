@@ -26,7 +26,7 @@ GOAL_REWARD_DISTANCE = 0.2
 
 # Robot and obstacle initilization constants
 NUM_OBSTACLES = 0
-INIT_DISTANCE_FROM_GOAL = 0.7
+INIT_DISTANCE_FROM_GOAL = 0.4
 
 class SimpleRobotEnviroment(Env):
 
@@ -60,7 +60,7 @@ class SimpleRobotEnviroment(Env):
         self.robot = SimpleRobot(np.array([0.7,0.7,0.0]), 0.105 / 2)
 
         # Randomly initialise goal, robot and obstacle positions
-        # self.reset_positions()
+        self.reset_positions()
 
         # Define observation space, [current position, goal position, sensor readings (check how many from assignment/Prorok code) (paper uses 30)]
         observation_shape = self.num_sensors + 6
@@ -179,8 +179,8 @@ class SimpleRobotEnviroment(Env):
         # reset your environment
 
         # Reset goal, robot and obstacle positions
-        # self.reset_positions()
-        self.robot.set_pose(np.array([0.7,0.7,0.0]))
+        self.reset_positions()
+        # self.robot.set_pose(np.array([0.7,0.7,0.0]))
 
         # Random bits and bobs
         self.steps_beyond_terminated = None
