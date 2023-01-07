@@ -49,11 +49,11 @@ class GoalCallbacks(DefaultCallbacks):
         goal_x = episode.last_observation_for()[3]
         goal_y = episode.last_observation_for()[4]
         goal_yaw = episode.last_observation_for()[5]
-        # reached_goal = (final_distance <= GOAL_DISTANCE) and (final_angle <= GOAL_ANGLE)
-        # print("episode {} ended with length {} and reached goal is {}".format(
-        #     episode.episode_id, episode.length, reached_goal))
+        success = episode.last_info_for()["Success"]
+
         episode.custom_metrics["final_distance"] = np.linalg.norm(np.array([goal_x, goal_y]) - np.array([final_x,final_y]))
         episode.custom_metrics["final_angle_difference"] = min(np.abs(goal_yaw - final_yaw), 2*np.pi - np.abs(goal_yaw - final_yaw))
+        episode.custom_metrics["reached_goal"] = success
 
         
 class GoalCallbacksCO(DefaultCallbacks):
@@ -63,11 +63,14 @@ class GoalCallbacksCO(DefaultCallbacks):
                        **kwargs):
         final_distance = episode.last_observation_for()[0]
         final_angle_diff = abs(episode.last_observation_for()[2])
-        # reached_goal = (final_distance <= GOAL_DISTANCE) and (final_angle <= GOAL_ANGLE)
-        # print("episode {} ended with length {} and reached goal is {}".format(
-        #     episode.episode_id, episode.length, reached_goal))
+        success = episode.last_info_for()["Success"]
+        # goal_yaw = episode.last_observation_for()[3]
+        # final_yaw = episode.last_observation_for()[2]
+        # final_angle_diff = min(np.abs(goal_yaw - final_yaw), 2*np.pi - np.abs(goal_yaw - final_yaw))
+
         episode.custom_metrics["final_distance"] = final_distance
         episode.custom_metrics["final_angle_difference"] = final_angle_diff
+        episode.custom_metrics["reached_goal"] = success
 
 
 if __name__ == '__main__':
@@ -100,7 +103,6 @@ if __name__ == '__main__':
     # print(algo.config.horizon)
     # print("m")
 
-    # algo.restore("/Users/emilymorris/ray_results/scaled_reward_continued_2023-01-05_12-44-21_aq8hjcq/checkpoint_000311/")
     num_episodes = 200
     for i in range(num_episodes):
         print(i)
@@ -111,3 +113,38 @@ if __name__ == '__main__':
         if i % 10 == 0 or i==num_episodes-1:
             checkpoint_dir = algo.save()
             print(f"Checkpoint saved in directory {checkpoint_dir}")
+
+
+    # For testing
+    # algo.restore("/Users/emilymorris/ray_results/dist_0.2_2023-01-06_17-07-29z57dvrir/checkpoint_000071/")
+    
+    # env = SimpleRobotEnviromentCO(render_mode="rgb_array")
+    # obs = env.reset()
+    # done = False
+    # print(obs)
+
+    # import matplotlib.pyplot as plt
+    # def displayImage(image):
+    #     plt.imshow(image)
+    #     plt.axis('off')
+    #     plt.show()
+
+    # x = env.render()
+    # displayImage(x)
+    
+    # for i in range(50):
+    #     print(i)
+    #     if not done:
+    #         action = algo.compute_single_action(obs)
+    #         print("Action: ", action)
+    #         obs, reward, done, _ = env.step(action)
+    #         print("ROBOT: ", env.robot.pose)
+    #         print("Observation:",obs)
+    #         print("Reward: ", reward)
+    #         print("Done",done)
+    #     else:
+    #         print("Done")
+
+
+    # x = env.render()
+    # displayImage(x)

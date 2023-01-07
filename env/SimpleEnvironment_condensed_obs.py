@@ -11,13 +11,16 @@ class SimpleRobotEnviromentCO(SimpleRobotEnviroment):
 
         # Define observation space, [distance to goal, angle to goal position, difference between current and goal angles, sensor readings (check how many from assignment/Prorok code) (paper uses 30)]
         observation_shape = self.num_sensors + 3
+        # observation_shape = self.num_sensors + 4
         obs_min = np.full((observation_shape,), 0.0)
         obs_min[1], obs_min[2] = -np.pi, -np.pi
+        # obs_min[1], obs_min[2], obs_min[3]= -np.pi, -np.pi, -np.pi
 
         obs_max = np.full((observation_shape,), MAX_SENSOR_DISTANCE)
         max_dist = np.linalg.norm(np.array([self.grid_size, self.grid_size]))
         # max x position robot, max y position robot, max yaw robot, need to account for observing values when we move outside the grid
         obs_max[0], obs_max[1], obs_max[2] = max_dist, np.pi, np.pi
+        # obs_max[0], obs_max[1], obs_max[2], obs_max[3] = max_dist, np.pi, np.pi, np.pi
         self.observation_space = Box(low = obs_min, high = obs_max, shape=(observation_shape,), dtype = np.float32)
 
         # self.goal_position = np.array([1.0,1.0,np.pi/2])
@@ -46,6 +49,7 @@ class SimpleRobotEnviromentCO(SimpleRobotEnviroment):
         sensor_readings = [self.ray_trace(a, self.robot.pose) for a in self.sensor_angles]
 
         return np.concatenate(([distance, goal_angle, angle_difference], sensor_readings))
+        # return np.concatenate(([distance, goal_angle, self.robot.pose[YAW], self.goal_position[YAW]], sensor_readings))
 
 if __name__ == "__main__":
     env = SimpleRobotEnviromentCO(render_mode="rgb_array")

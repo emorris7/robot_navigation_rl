@@ -6,7 +6,8 @@ from typing import Optional
 from gym.error import DependencyNotInstalled
 
 # Assume the robot cannot go backwards and does not stop moving (have max speed of 0.2 in assignments)
-MAX_SPEED = 0.8
+# Was using 0.8
+MAX_SPEED = 2.0
 # TODO: Change from 0.05
 MIN_SPEED = 0.0
 MAX_W = np.pi /4 # TODO: USE?
@@ -139,6 +140,10 @@ class SimpleRobotEnviroment(Env):
         #     print("Angle diff: ", angle_diff)
         #     print("Distance: ", distance)
 
+        # Record dictionary
+        info_dict = {}
+        info_dict["Success"] = 0
+
         # Compute done
         done = False
         # Large negative reward to ensure agent doesn't just learn to crash into the wall
@@ -160,12 +165,11 @@ class SimpleRobotEnviroment(Env):
             # elif distance <= GOAL_DISTANCE:
                 done = True
                 reward += 50
+                info_dict["Success"] = 1
         # Allow us to throw warning and stop unexpected behaviour
         if done:
             self.steps_beyond_terminated = 0
 
-        # Record dictionary
-        info_dict = {}
 
         # Render the environment
         if self.render_mode == "human":
@@ -188,6 +192,8 @@ class SimpleRobotEnviroment(Env):
         self.clock = None
         self.path = [np.copy(self.robot.pose[:2])]
 
+        # print("ROBOT: ", self.robot.pose)
+        # print("GOAL: ", self.goal_position)
         return self.observation()
 
     def render(self):
@@ -351,7 +357,9 @@ class SimpleRobotEnviroment(Env):
             d = min(d, d_obstacles)
 
         # Remove inf and limit the sensor readings to the max sensor range
-        return min(d, MAX_SENSOR_DISTANCE)
+        final_sensor_reading = min(d, MAX_SENSOR_DISTANCE)
+        assert final_sensor_reading >= 0.0
+        return final_sensor_reading
 
     # observation is [robot position, goal position, sensor readings] (based on flocking example)
     def observation(self):
@@ -391,6 +399,10 @@ class SimpleRobotEnviroment(Env):
             collide = True
             while collide:
                 rand_pos = np.random.uniform(low=min, high=max, size=(2))
+                
+                assert np.all(rand_pos < np.array(max)), "rand_pos out of bounds"
+                assert np.all(rand_pos >= np.array(min)), "rand_pos out of bounds"
+
                 self.robot.set_pose(np.append(rand_pos,[0.0]))
                 collide = False
                 # Check that the position does not collide with other obstacles
@@ -401,13 +413,14 @@ class SimpleRobotEnviroment(Env):
             return np.append(rand_pos, [np.random.uniform(low=-np.pi, high=np.pi)])
 
         # Set random goal position, ensuring it does not clash with obstacles
-        self.goal_position = get_random_robot_pos((self.robot.radius, self.robot.radius), (self.grid_size-self.robot.radius, self.grid_size-self.robot.radius))
+        self.goal_position = get_random_robot_pos((0.01 + self.robot.radius, 0.01 + self.robot.radius), (self.grid_size-self.robot.radius, self.grid_size-self.robot.radius))
         
         # Set random robot position, a certain distance away from the goal
-        min_x = max(0.0 + self.robot.radius, self.goal_position[X] - INIT_DISTANCE_FROM_GOAL)
+        min_x = max(0.01 + self.robot.radius, self.goal_position[X] - INIT_DISTANCE_FROM_GOAL)
         max_x = min(self.grid_size-self.robot.radius, self.goal_position[X] + INIT_DISTANCE_FROM_GOAL)
-        min_y = max(0.0 + self.robot.radius, self.goal_position[Y] - INIT_DISTANCE_FROM_GOAL)
+        min_y = max(0.01 + self.robot.radius, self.goal_position[Y] - INIT_DISTANCE_FROM_GOAL)
         max_y = min(self.grid_size-self.robot.radius, self.goal_position[Y] + INIT_DISTANCE_FROM_GOAL)
+
         self.robot.set_pose(get_random_robot_pos((min_x,min_y), (max_x, max_y)))
 
 
@@ -486,8 +499,8 @@ class SimpleRobot():
 
 if __name__ == "__main__":
     env = SimpleRobotEnviroment(render_mode="rgb_array")
-    for i in range(5):
-        print(env.step(env.action_space.sample()))
+    # for i in range(5):
+    #     print(env.step(env.action_space.sample()))
     # print(env.reset())
     # print(env.reset())
     # env.reset()
