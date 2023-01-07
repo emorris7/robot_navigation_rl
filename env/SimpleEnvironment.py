@@ -27,7 +27,7 @@ GOAL_REWARD_DISTANCE = 0.2
 ROBOT_RADIUS = 0.105 / 2
 
 # Robot and obstacle initilization constants
-NUM_OBSTACLES = 0
+NUM_OBSTACLES = 5
 INIT_DISTANCE_FROM_GOAL = 0.7
 
 class SimpleRobotEnviroment(Env):
@@ -170,7 +170,7 @@ class SimpleRobotEnviroment(Env):
             # elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
             elif distance <= GOAL_DISTANCE:
                 done = True
-                reward += 1200
+                reward += 1400
                 info_dict["Success"] = 1
         # Allow us to throw warning and stop unexpected behaviour
         if done:
