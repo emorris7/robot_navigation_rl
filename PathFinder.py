@@ -1,4 +1,5 @@
 from ray.rllib.algorithms.ppo import PPOConfig
+from ray.rllib.algorithms.sac import SACConfig
 from ray.tune.logger import pretty_print
 from env.SimpleEnvironment import SimpleRobotEnviroment
 from env.SimpleEnvironment_condensed_obs import SimpleRobotEnviromentCO
@@ -17,6 +18,8 @@ from ray.rllib.env import BaseEnv
 from ray.rllib.policy import Policy
 from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
+
+# import tensorflow_probability as tpf
 
 
 # env = SimpleRobotEnviroment(render_mode="rgb_array") 
@@ -106,6 +109,15 @@ if __name__ == '__main__':
     )
     # print(algo.config.horizon)
     # print("m")
+
+    # algo = (
+    #     SACConfig()
+    #     .rollouts(num_rollout_workers=1,horizon=600)
+    #     .resources(num_gpus=0)
+    #     .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
+    #     .callbacks(GoalCallbacksCO)
+    #     .build()
+    # )
 
     num_episodes = 200
     for i in range(num_episodes):

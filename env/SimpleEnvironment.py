@@ -24,6 +24,7 @@ MAX_SENSOR_DISTANCE = 0.12
 # When to start factoring in angle difference to the reward
 # Checked with 3.0 and 1.0 and 2.0 worked best
 GOAL_REWARD_DISTANCE = 0.2
+ROBOT_RADIUS = 0.105 / 2
 
 # Robot and obstacle initilization constants
 NUM_OBSTACLES = 0
@@ -58,7 +59,7 @@ class SimpleRobotEnviroment(Env):
         self.num_sensors = 7
         self.sensor_angles = np.linspace(-np.pi/2, np.pi/2, self.num_sensors)
         # Robot position needs to be a float
-        self.robot = SimpleRobot(np.array([0.7,0.7,0.0]), 0.105 / 2)
+        self.robot = SimpleRobot(np.array([0.7,0.7,0.0]), ROBOT_RADIUS)
 
         # Randomly initialise goal, robot and obstacle positions
         self.reset_positions()
@@ -131,8 +132,9 @@ class SimpleRobotEnviroment(Env):
         reward_proportion = 0.5
         # reward = - normalized_dist if distance >= GOAL_REWARD_DISTANCE else (-0.9 * (normalized_dist*reward_proportion + (angle_diff/(np.pi))*(1-reward_proportion)))
         norm_goal_reward_distance = GOAL_REWARD_DISTANCE/max_distance
-        reward = - normalized_dist if distance > GOAL_REWARD_DISTANCE else \
-            (- (normalized_dist*reward_proportion + (angle_diff/(np.pi))*norm_goal_reward_distance*(1-reward_proportion)))
+        # reward = - normalized_dist if distance > GOAL_REWARD_DISTANCE else \
+        #     (- (normalized_dist*reward_proportion + (angle_diff/(np.pi))*norm_goal_reward_distance*(1-reward_proportion)))
+        reward = - normalized_dist
         # print("Angle diff ", angle_diff, " angle robot ", self.goal_position[YAW], " angle goal ", self.robot.pose[YAW])
         # reward = -distance if distance >= GOAL_REWARD_DISTANCE else (-distance+np.pi-angle_diff)
         # reward = -distance-(angle_diff/np.pi)
@@ -150,24 +152,25 @@ class SimpleRobotEnviroment(Env):
         # Large negative reward to ensure agent doesn't just learn to crash into the wall
         collision_reward = -1200
         # if robot is outside the grid (collides with a wall)
-        if (self.robot.pose[X] + self.robot.radius >= self.grid_size) or (self.robot.pose[Y] + self.robot.radius >= self.grid_size) or (self.robot.pose[X] <= 0.0 + self.robot.radius) or (self.robot.pose[Y] <= 0.0 + self.robot.radius):
+        if (self.robot.pose[X] + self.robot.radius >= self.grid_size) or (self.robot.pose[Y] + self.robot.radius >= self.grid_size) \
+            or (self.robot.pose[X] <= 0.0 + self.robot.radius) or (self.robot.pose[Y] <= 0.0 + self.robot.radius):
             done = True
             # TODO: 50
             reward += collision_reward
             info_dict["Crash"] = 1
         else:
             # if the robot collides with an object
-            collision = np.any([o.collide(self.robot) for o in self.obstacles])
+            collision = np.any(np.array([o.collide(self.robot) for o in self.obstacles]))
             if collision:
                 done = True
                 # TODO 50
                 reward += collision_reward
                 info_dict["Crash"] = 1
             # if the robot reaches the goal (is within some distance of the goal position)
-            elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
-            # elif distance <= GOAL_DISTANCE:
+            # elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
+            elif distance <= GOAL_DISTANCE:
                 done = True
-                reward += 50
+                reward += 1200
                 info_dict["Success"] = 1
         # Allow us to throw warning and stop unexpected behaviour
         if done:
@@ -406,23 +409,25 @@ class SimpleRobotEnviroment(Env):
                 assert np.all(rand_pos < np.array(max)), "rand_pos out of bounds"
                 assert np.all(rand_pos >= np.array(min)), "rand_pos out of bounds"
 
-                self.robot.set_pose(np.append(rand_pos,[0.0]))
+                # self.robot.set_pose(np.append(rand_pos,[0.0]))
                 collide = False
                 # Check that the position does not collide with other obstacles
                 for o in self.obstacles:
-                    collide = o.collide(self.robot)
+                    fake_robot = SimpleRobot(np.append(rand_pos,[0.0]), ROBOT_RADIUS + 0.01)
+                    collide = o.collide(fake_robot)
                     if collide:
                         break
             return np.append(rand_pos, [np.random.uniform(low=-np.pi, high=np.pi)])
 
         # Set random goal position, ensuring it does not clash with obstacles
-        self.goal_position = get_random_robot_pos((0.01 + self.robot.radius, 0.01 + self.robot.radius), (self.grid_size-self.robot.radius, self.grid_size-self.robot.radius))
+        # Adding offset to ensure the robot doesn't spawn exactly touching the wall or too close to it that any movement causes crashing
+        self.goal_position = get_random_robot_pos((0.01 + self.robot.radius, 0.01 + self.robot.radius), (self.grid_size-self.robot.radius - 0.01, self.grid_size-self.robot.radius - 0.01))
         
         # Set random robot position, a certain distance away from the goal
         min_x = max(0.01 + self.robot.radius, self.goal_position[X] - INIT_DISTANCE_FROM_GOAL)
-        max_x = min(self.grid_size-self.robot.radius, self.goal_position[X] + INIT_DISTANCE_FROM_GOAL)
+        max_x = min(self.grid_size-self.robot.radius - 0.01, self.goal_position[X] + INIT_DISTANCE_FROM_GOAL)
         min_y = max(0.01 + self.robot.radius, self.goal_position[Y] - INIT_DISTANCE_FROM_GOAL)
-        max_y = min(self.grid_size-self.robot.radius, self.goal_position[Y] + INIT_DISTANCE_FROM_GOAL)
+        max_y = min(self.grid_size-self.robot.radius - 0.01, self.goal_position[Y] + INIT_DISTANCE_FROM_GOAL)
 
         self.robot.set_pose(get_random_robot_pos((min_x,min_y), (max_x, max_y)))
 
@@ -456,7 +461,7 @@ class Obstacle():
         self._y_pos = position[Y]
 
     def collide(self, robot):
-        if np.linalg.norm(robot.pose[:2] - self.position) - robot.radius <= self.radius:
+        if np.linalg.norm(robot.pose[:2] - self.position) <= self.radius + robot.radius:
             return True
         return False
 

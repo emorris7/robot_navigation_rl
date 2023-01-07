@@ -41,10 +41,11 @@ class SimpleRobotEnviromentCO(SimpleRobotEnviroment):
         angle_sign = (-1) if robot_pos_angle >=0 else 1
         goal_angle = robot_pos_angle if abs(robot_pos_angle) <= np.pi else (angle_sign*(2*np.pi - abs(robot_pos_angle)))
 
-        robot_angle_diff = self.robot.pose[YAW] - self.goal_position[YAW]
-        # always take the smallest angle between the two positions, negative means distance is anticlockwise, postive means difference is clockwise
-        angle_diff_sign = (-1) if robot_angle_diff >=0 else 1
-        angle_difference = robot_angle_diff if abs(robot_angle_diff) <= np.pi else (angle_diff_sign*(2*np.pi - abs(robot_angle_diff)))
+        # robot_angle_diff = self.robot.pose[YAW] - self.goal_position[YAW]
+        # # always take the smallest angle between the two positions, negative means distance is anticlockwise, postive means difference is clockwise
+        # angle_diff_sign = (-1) if robot_angle_diff >=0 else 1
+        # angle_difference = robot_angle_diff if abs(robot_angle_diff) <= np.pi else (angle_diff_sign*(2*np.pi - abs(robot_angle_diff)))
+        angle_difference = 0
 
         sensor_readings = [self.ray_trace(a, self.robot.pose) for a in self.sensor_angles]
 
