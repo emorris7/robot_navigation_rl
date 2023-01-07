@@ -50,10 +50,12 @@ class GoalCallbacks(DefaultCallbacks):
         goal_y = episode.last_observation_for()[4]
         goal_yaw = episode.last_observation_for()[5]
         success = episode.last_info_for()["Success"]
+        crash = episode.last_info_for()["Crash"]
 
         episode.custom_metrics["final_distance"] = np.linalg.norm(np.array([goal_x, goal_y]) - np.array([final_x,final_y]))
         episode.custom_metrics["final_angle_difference"] = min(np.abs(goal_yaw - final_yaw), 2*np.pi - np.abs(goal_yaw - final_yaw))
         episode.custom_metrics["reached_goal"] = success
+        episode.custom_metrics["crash"] = crash
 
         
 class GoalCallbacksCO(DefaultCallbacks):
@@ -64,6 +66,7 @@ class GoalCallbacksCO(DefaultCallbacks):
         final_distance = episode.last_observation_for()[0]
         final_angle_diff = abs(episode.last_observation_for()[2])
         success = episode.last_info_for()["Success"]
+        crash = episode.last_info_for()["Crash"]
         # goal_yaw = episode.last_observation_for()[3]
         # final_yaw = episode.last_observation_for()[2]
         # final_angle_diff = min(np.abs(goal_yaw - final_yaw), 2*np.pi - np.abs(goal_yaw - final_yaw))
@@ -71,6 +74,7 @@ class GoalCallbacksCO(DefaultCallbacks):
         episode.custom_metrics["final_distance"] = final_distance
         episode.custom_metrics["final_angle_difference"] = final_angle_diff
         episode.custom_metrics["reached_goal"] = success
+        episode.custom_metrics["crash"] = crash
 
 
 if __name__ == '__main__':

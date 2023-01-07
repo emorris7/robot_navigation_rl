@@ -20,7 +20,7 @@ YAW = 2
 # Permissable distance from goal
 GOAL_DISTANCE = 0.01
 GOAL_ANGLE = 0.01
-MAX_SENSOR_DISTANCE = 2.0
+MAX_SENSOR_DISTANCE = 0.12
 # When to start factoring in angle difference to the reward
 # Checked with 3.0 and 1.0 and 2.0 worked best
 GOAL_REWARD_DISTANCE = 0.2
@@ -143,6 +143,7 @@ class SimpleRobotEnviroment(Env):
         # Record dictionary
         info_dict = {}
         info_dict["Success"] = 0
+        info_dict["Crash"] = 0
 
         # Compute done
         done = False
@@ -153,6 +154,7 @@ class SimpleRobotEnviroment(Env):
             done = True
             # TODO: 50
             reward += collision_reward
+            info_dict["Crash"] = 1
         else:
             # if the robot collides with an object
             collision = np.any([o.collide(self.robot) for o in self.obstacles])
@@ -160,6 +162,7 @@ class SimpleRobotEnviroment(Env):
                 done = True
                 # TODO 50
                 reward += collision_reward
+                info_dict["Crash"] = 1
             # if the robot reaches the goal (is within some distance of the goal position)
             elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
             # elif distance <= GOAL_DISTANCE:
