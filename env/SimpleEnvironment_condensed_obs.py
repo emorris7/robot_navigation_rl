@@ -1,8 +1,6 @@
-
-
-from SimpleEnvironment import SimpleRobotEnviroment, SimpleRobot
+from env.SimpleEnvironment import SimpleRobotEnviroment, SimpleRobot
 from typing import Optional
-from SimpleEnvironment import MAX_SENSOR_DISTANCE, X, Y, YAW
+from env.SimpleEnvironment import MAX_SENSOR_DISTANCE, X, Y, YAW
 import numpy as np
 from gym.spaces import Box
 

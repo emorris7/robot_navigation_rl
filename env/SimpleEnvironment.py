@@ -27,8 +27,8 @@ GOAL_REWARD_DISTANCE = 0.2
 ROBOT_RADIUS = 0.105 / 2
 
 # Robot and obstacle initilization constants
-NUM_OBSTACLES = 1
-INIT_DISTANCE_FROM_GOAL = 0.2
+NUM_OBSTACLES = 0
+INIT_DISTANCE_FROM_GOAL = 0.7
 
 class SimpleRobotEnviroment(Env):
 
@@ -421,7 +421,7 @@ class SimpleRobotEnviroment(Env):
 
         # Set random goal position, ensuring it does not clash with obstacles
         # Adding offset to ensure the robot doesn't spawn exactly touching the wall or too close to it that any movement causes crashing
-        self.goal_position = get_random_robot_pos((0.01 + self.robot.radius, 0.01 + self.robot.radius), (self.grid_size-self.robot.radius - 0.01, self.grid_size-self.robot.radius - 0.01))
+        self.goal_position = get_random_robot_pos((0.01 + self.robot.radius , 0.01 + self.robot.radius), (self.grid_size-self.robot.radius - 0.01, self.grid_size-self.robot.radius - 0.01))
         
         # Set random robot position, a certain distance away from the goal
         min_x = max(0.01 + self.robot.radius, self.goal_position[X] - INIT_DISTANCE_FROM_GOAL)
