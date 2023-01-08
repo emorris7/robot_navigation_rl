@@ -95,29 +95,30 @@ if __name__ == '__main__':
     #     .build()
     # )
 
-    algo = (
-        PPOConfig()
-        # .training(lr=1e-4)
-        # .training(model={'use_lstm':True})
-        # .training(train_batch_size=60000, sgd_minibatch_size=4096)
-        # Increase horizon from 200 to 400 as robot was ending before reaching goal
-        .rollouts(num_rollout_workers=1,horizon=600)
-        .resources(num_gpus=0)
-        .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
-        .callbacks(GoalCallbacksCO)
-        .build()
-    )
-    # print(algo.config.horizon)
-    # print("m")
-
     # algo = (
-    #     SACConfig()
+    #     PPOConfig()
+    #     # .training(lr=1e-4)
+    #     # .training(model={'use_lstm':True})
+    #     # .training(train_batch_size=60000, sgd_minibatch_size=4096)
+    #     # Increase horizon from 200 to 400 as robot was ending before reaching goal
     #     .rollouts(num_rollout_workers=1,horizon=600)
     #     .resources(num_gpus=0)
     #     .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
     #     .callbacks(GoalCallbacksCO)
     #     .build()
     # )
+    # print(algo.config.horizon)
+    # print("m")
+
+    algo = (
+        SACConfig()
+        .rollouts(num_rollout_workers=1,horizon=600)
+        .resources(num_gpus=0)
+        .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
+        .callbacks(GoalCallbacksCO)
+        .framework(framework="torch")
+        .build()
+    )
 
     num_episodes = 200
     for i in range(num_episodes):

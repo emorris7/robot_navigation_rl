@@ -27,7 +27,7 @@ GOAL_REWARD_DISTANCE = 0.2
 ROBOT_RADIUS = 0.105 / 2
 
 # Robot and obstacle initilization constants
-NUM_OBSTACLES = 5
+NUM_OBSTACLES = 0
 INIT_DISTANCE_FROM_GOAL = 0.7
 
 class SimpleRobotEnviroment(Env):
