@@ -121,7 +121,7 @@ if __name__ == '__main__':
     )
     
     # For testing
-    # algo.restore("/Users/emilymorris/ray_results/SAC_dist-0.7-continued_2023-01-08_14-35-57was4ece6/checkpoint_001000/")
+    # algo.restore("/Users/emilymorris/ray_results/SAC_sensors_dist_-.25_2023-01-08_19-03-20xtel30ec/checkpoint_000751/")
 
     num_episodes = 1500
     for i in range(num_episodes):
@@ -151,7 +151,7 @@ if __name__ == '__main__':
     # x = env.render()
     # displayImage(x)
     
-    # for i in range(50):
+    # for i in range(100):
     #     print(i)
     #     if not done:
     #         action = algo.compute_single_action(obs)

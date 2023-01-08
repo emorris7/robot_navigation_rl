@@ -101,35 +101,16 @@ def astar(maze, start, end):
             open_list.append(child)
 
 
-def main():
-
-    maze = [[0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
-
-    start = (0, 0)
-    end = (7, 6)
-
-    path = astar(maze, start, end)
-    print(path)
-
 def continuous_to_grid(continuous_coord, block_size):
-    grid = np.round(continuous_coord / block_size)
+    grid = int(np.round(continuous_coord / block_size))
+    print(grid)
     return grid
 
 def grid_to_continuous(grid_coord, block_size):
     continuous_val = grid_coord*block_size
     return continuous_val
 
-def create_grid(continuous_size, grid_size, obstacles: list[Obstacle]):
-    block_size = continuous_size/grid_size 
+def create_grid(block_size, grid_size, obstacles: list[Obstacle]): 
     obstacle_map = np.zeros(shape=(grid_size,grid_size))
 
     for o in obstacles:
@@ -148,11 +129,39 @@ def create_grid(continuous_size, grid_size, obstacles: list[Obstacle]):
     return obstacle_map
 
 def plot_path(start_position, goal_position, continuous_size, grid_size, obstacles: list[Obstacle]):
-    start_position_grid = [continuous_to_grid(start_position[X]), continuous_to_grid(start_position[Y])]
-    goal_position_grid = [continuous_to_grid(goal_position[X]), continuous_to_grid(goal_position[Y])]
+    block_size = continuous_size/grid_size 
+    start_position_grid = (continuous_to_grid(start_position[X], block_size=block_size), continuous_to_grid(start_position[Y], block_size=block_size))
+    goal_position_grid = (continuous_to_grid(goal_position[X], block_size=block_size), continuous_to_grid(goal_position[Y], block_size=block_size))
 
-    grid = create_grid(continuous_size=continuous_size)
+    grid = create_grid(block_size=block_size, grid_size=grid_size, obstacles=obstacles)
+    path = astar(grid, start_position_grid, goal_position_grid)
 
+    for i in path:
+        grid[i[0]][i[1]] = 2
+    print(grid)
+    return path
+
+
+def main():
+
+    # maze = [[0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+    #         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+    #         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+    #         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+    #         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+    #         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+    #         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+    #         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+    #         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+
+    # start = (0, 0)
+    # end = (7, 6)
+
+    # path = astar(maze, start, end)
+    # print(path)
+    path = plot_path([0.1,0.1], [0.8, 0.8], 2.0, 19, [Obstacle(0.4, 0.4, 0.1)])
+    print(path)
 
 if __name__ == '__main__':
     main()
