@@ -27,7 +27,7 @@ GOAL_REWARD_DISTANCE = 0.2
 ROBOT_RADIUS = 0.105 / 2
 
 # Robot and obstacle initilization constants
-NUM_OBSTACLES = 0
+NUM_OBSTACLES = 1
 INIT_DISTANCE_FROM_GOAL = 0.7
 
 class SimpleRobotEnviroment(Env):
@@ -385,51 +385,110 @@ class SimpleRobotEnviroment(Env):
         return np.concatenate((self.robot.pose, self.goal_position, sensor_readings))
 
     def reset_positions(self):
-        # TODO perhaps create goal and robot positions first to ensure we don't get stuck in random corners
-        # Set random positions for obstacles
+        # # TODO perhaps create goal and robot positions first to ensure we don't get stuck in random corners
+        # # Set random positions for obstacles
+        # for i in range(NUM_OBSTACLES):
+        #     collide = True
+        #     while collide:
+        #         rand_pos = np.random.uniform(low=self.obstacles[i].radius, high=self.grid_size-self.obstacles[i].radius, size=(2))
+        #         collide = False
+        #         # Check that the obstacle does not collide with other obstacles
+        #         for j in range(i):
+        #             o = self.obstacles[j]
+        #             if np.linalg.norm(o.position - rand_pos) < (o.radius + self.obstacles[i].radius):
+        #                 collide = True
+        #                 break
+        #     self.obstacles[i].set_position(rand_pos)
+    
+        # # minimum x and y values 
+        # def get_random_robot_pos(min, max): 
+        #     collide = True
+        #     while collide:
+        #         rand_pos = np.random.uniform(low=min, high=max, size=(2))
+                
+        #         assert np.all(rand_pos < np.array(max)), "rand_pos out of bounds"
+        #         assert np.all(rand_pos >= np.array(min)), "rand_pos out of bounds"
+
+        #         # self.robot.set_pose(np.append(rand_pos,[0.0]))
+        #         collide = False
+        #         # Check that the position does not collide with other obstacles
+        #         for o in self.obstacles:
+        #             fake_robot = SimpleRobot(np.append(rand_pos,[0.0]), ROBOT_RADIUS + 0.01)
+        #             collide = o.collide(fake_robot)
+        #             if collide:
+        #                 break
+        #     return np.append(rand_pos, [np.random.uniform(low=-np.pi, high=np.pi)])
+
+        # # Set random goal position, ensuring it does not clash with obstacles
+        # # Adding offset to ensure the robot doesn't spawn exactly touching the wall or too close to it that any movement causes crashing
+        # self.goal_position = get_random_robot_pos((0.01 + self.robot.radius , 0.01 + self.robot.radius), (self.grid_size-self.robot.radius - 0.01, self.grid_size-self.robot.radius - 0.01))
+        
+        # # Set random robot position, a certain distance away from the goal
+        # min_x = max(0.01 + self.robot.radius, self.goal_position[X] - INIT_DISTANCE_FROM_GOAL)
+        # max_x = min(self.grid_size-self.robot.radius - 0.01, self.goal_position[X] + INIT_DISTANCE_FROM_GOAL)
+        # min_y = max(0.01 + self.robot.radius, self.goal_position[Y] - INIT_DISTANCE_FROM_GOAL)
+        # max_y = min(self.grid_size-self.robot.radius - 0.01, self.goal_position[Y] + INIT_DISTANCE_FROM_GOAL)
+
+        # self.robot.set_pose(get_random_robot_pos((min_x,min_y), (max_x, max_y)))
+
+        # Set random goal position, ensuring it is far enough away from the wall that the robot position can be spawned the required distance away
+        # Adding offset to ensure the robot doesn't spawn exactly touching the wall or too close to it that any movement causes crashing
+        min_goal_coord = 0.01 + self.robot.radius + INIT_DISTANCE_FROM_GOAL
+        max_goal_coord = self.grid_size-self.robot.radius - 0.01 - INIT_DISTANCE_FROM_GOAL
+
+        # Check that the initialization distance is not too large and we can actually create a goal position in this range
+        assert min_goal_coord < max_goal_coord, "Initialisation distance is too large for current gridsize"
+
+        self.goal_position = np.append(np.random.uniform(low=min_goal_coord, high=max_goal_coord, size=(2)), [np.random.uniform(low=-np.pi, high=np.pi)])
+        
+        # Set random robot position, a certain distance away from the goal, we know we will be able to find a position as we have initialised our goal position for this
+        min_robot_x = self.goal_position[X] - INIT_DISTANCE_FROM_GOAL
+        max_robot_x = self.goal_position[X] + INIT_DISTANCE_FROM_GOAL
+        robot_x = np.random.uniform(low=min_robot_x, high=max_robot_x)
+
+        y_neg = - np.sqrt(INIT_DISTANCE_FROM_GOAL**2 - (robot_x - self.goal_position[X])**2) + self.goal_position[Y]
+        y_pos = np.sqrt(INIT_DISTANCE_FROM_GOAL**2 - (robot_x - self.goal_position[X])**2) + self.goal_position[Y]
+        robot_y = np.random.choice([y_neg, y_pos])
+
+        robot_pos = np.array([robot_x, robot_y])
+
+        # Give some tolerance for the distance to deal with rounding errors
+        dist_to_goal = np.linalg.norm(self.goal_position[:2] - robot_pos)
+        assert  dist_to_goal < INIT_DISTANCE_FROM_GOAL + 0.01, "Robot initialisation too far from goal, distance " + str(dist_to_goal)
+        assert dist_to_goal > INIT_DISTANCE_FROM_GOAL - 0.01, "Robot initialisation too close to goal, distance " + str(dist_to_goal)
+
+        self.robot.set_pose(np.append(robot_pos, [np.random.uniform(low=-np.pi, high=np.pi)]))
+
         for i in range(NUM_OBSTACLES):
+            # Make sure the obstacles do not spawn too close to the robot and goal positions by slightly expanding them
+            expanded_robot = SimpleRobot(self.robot.pose, ROBOT_RADIUS + 0.01)
+            expanded_goal = SimpleRobot(self.goal_position, ROBOT_RADIUS + 0.01)
+            # Find the midpoint between the goal and the robot
+            midpoint = (self.goal_position[:2] + self.robot.pose[:2])/2.0
             collide = True
             while collide:
-                rand_pos = np.random.uniform(low=self.obstacles[i].radius, high=self.grid_size-self.obstacles[i].radius, size=(2))
+                rand_pos = np.random.multivariate_normal(mean=midpoint, cov=[[INIT_DISTANCE_FROM_GOAL/4.0, 0], [0, INIT_DISTANCE_FROM_GOAL/4.0]])
                 collide = False
+
+                self.obstacles[i].set_position(rand_pos)
+
+                if self.obstacles[i].collide(expanded_goal) or self.obstacles[i].collide(expanded_robot):
+                    collide = True
+                    continue
+
+                elif np.any(rand_pos + self.obstacles[i].radius > self.grid_size) or \
+                    np.any(rand_pos - self.obstacles[i].radius < 0.0):
+                    collide = True
+                    continue 
+                    
                 # Check that the obstacle does not collide with other obstacles
                 for j in range(i):
                     o = self.obstacles[j]
                     if np.linalg.norm(o.position - rand_pos) < (o.radius + self.obstacles[i].radius):
                         collide = True
                         break
-            self.obstacles[i].set_position(rand_pos)
-    
-        # minimum x and y values 
-        def get_random_robot_pos(min, max): 
-            collide = True
-            while collide:
-                rand_pos = np.random.uniform(low=min, high=max, size=(2))
                 
-                assert np.all(rand_pos < np.array(max)), "rand_pos out of bounds"
-                assert np.all(rand_pos >= np.array(min)), "rand_pos out of bounds"
-
-                # self.robot.set_pose(np.append(rand_pos,[0.0]))
-                collide = False
-                # Check that the position does not collide with other obstacles
-                for o in self.obstacles:
-                    fake_robot = SimpleRobot(np.append(rand_pos,[0.0]), ROBOT_RADIUS + 0.01)
-                    collide = o.collide(fake_robot)
-                    if collide:
-                        break
-            return np.append(rand_pos, [np.random.uniform(low=-np.pi, high=np.pi)])
-
-        # Set random goal position, ensuring it does not clash with obstacles
-        # Adding offset to ensure the robot doesn't spawn exactly touching the wall or too close to it that any movement causes crashing
-        self.goal_position = get_random_robot_pos((0.01 + self.robot.radius , 0.01 + self.robot.radius), (self.grid_size-self.robot.radius - 0.01, self.grid_size-self.robot.radius - 0.01))
-        
-        # Set random robot position, a certain distance away from the goal
-        min_x = max(0.01 + self.robot.radius, self.goal_position[X] - INIT_DISTANCE_FROM_GOAL)
-        max_x = min(self.grid_size-self.robot.radius - 0.01, self.goal_position[X] + INIT_DISTANCE_FROM_GOAL)
-        min_y = max(0.01 + self.robot.radius, self.goal_position[Y] - INIT_DISTANCE_FROM_GOAL)
-        max_y = min(self.grid_size-self.robot.radius - 0.01, self.goal_position[Y] + INIT_DISTANCE_FROM_GOAL)
-
-        self.robot.set_pose(get_random_robot_pos((min_x,min_y), (max_x, max_y)))
+            
 
 
 # Class representing a circular obstacle

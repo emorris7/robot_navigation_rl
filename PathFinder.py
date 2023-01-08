@@ -120,7 +120,7 @@ if __name__ == '__main__':
         .build()
     )
 
-    num_episodes = 200
+    num_episodes = 500
     for i in range(num_episodes):
         print(i)
         result = algo.train()
