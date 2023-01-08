@@ -20,7 +20,7 @@ YAW = 2
 # Permissable distance from goal
 GOAL_DISTANCE = 0.01
 GOAL_ANGLE = 0.01
-MAX_SENSOR_DISTANCE = 0.12
+MAX_SENSOR_DISTANCE = 0.25
 # When to start factoring in angle difference to the reward
 # Checked with 3.0 and 1.0 and 2.0 worked best
 GOAL_REWARD_DISTANCE = 0.2

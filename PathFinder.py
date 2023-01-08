@@ -119,8 +119,11 @@ if __name__ == '__main__':
         .framework(framework="torch")
         .build()
     )
+    
+    # For testing
+    # algo.restore("/Users/emilymorris/ray_results/SAC_dist-0.7-continued_2023-01-08_14-35-57was4ece6/checkpoint_001000/")
 
-    num_episodes = 500
+    num_episodes = 1500
     for i in range(num_episodes):
         print(i)
         result = algo.train()
@@ -132,8 +135,7 @@ if __name__ == '__main__':
             print(f"Checkpoint saved in directory {checkpoint_dir}")
 
 
-    # For testing
-    # algo.restore("/Users/emilymorris/ray_results/dist_0.2_2023-01-06_17-07-29z57dvrir/checkpoint_000071/")
+    
     
     # env = SimpleRobotEnviromentCO(render_mode="rgb_array")
     # obs = env.reset()
