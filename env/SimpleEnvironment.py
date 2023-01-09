@@ -132,12 +132,12 @@ class SimpleRobotEnviroment(Env):
         reward_proportion = 0.5
         # reward = - normalized_dist if distance >= GOAL_REWARD_DISTANCE else (-0.9 * (normalized_dist*reward_proportion + (angle_diff/(np.pi))*(1-reward_proportion)))
         norm_goal_reward_distance = GOAL_REWARD_DISTANCE/max_distance
-        # reward = - normalized_dist if distance > GOAL_REWARD_DISTANCE else \
-        #     (- (normalized_dist*reward_proportion + (angle_diff/(np.pi))*norm_goal_reward_distance*(1-reward_proportion)))
+        reward = - normalized_dist if distance > GOAL_REWARD_DISTANCE else \
+            (- (normalized_dist*reward_proportion + (angle_diff/(np.pi))*norm_goal_reward_distance*(1-reward_proportion)))
         # reward = - normalized_dist
         # print("Angle diff ", angle_diff, " angle robot ", self.goal_position[YAW], " angle goal ", self.robot.pose[YAW])
         # reward = -distance if distance >= GOAL_REWARD_DISTANCE else (-distance+np.pi-angle_diff)
-        reward = -normalized_dist-(angle_diff/np.pi)
+        # reward = -normalized_dist-(angle_diff/np.pi)
         # if reward > 10:
         #     print("Angle diff: ", angle_diff)
         #     print("Distance: ", distance)
