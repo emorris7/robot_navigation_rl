@@ -105,12 +105,22 @@ if __name__ == '__main__':
     # print(algo.config.horizon)
     # print("m")
 
+    # algo = (
+    #     SACConfig()
+    #     .rollouts(num_rollout_workers=8,horizon=600)
+    #     .resources(num_gpus=0)
+    #     .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
+    #     .callbacks(GoalCallbacksCO)
+    #     .framework(framework="torch")
+    #     .build()
+    # )
+
     algo = (
         SACConfig()
         .rollouts(num_rollout_workers=8,horizon=600)
         .resources(num_gpus=0)
-        .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
-        .callbacks(GoalCallbacksCO)
+        .environment(SimpleRobotEnviroment, env_config={"render_mode":"rgb_array"})
+        .callbacks(GoalCallbacks)
         .framework(framework="torch")
         .build()
     )
@@ -125,8 +135,8 @@ if __name__ == '__main__':
     #     .build()
     # )
     
-    # For testing
-    algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnviromentCO_2023-01-09_00-14-05kc_mr_w7/checkpoint_001500/")
+    #For testing
+    # algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnviromentCO_2023-01-09_22-50-52o3se9bhz/checkpoint_003281/")
 
     # num_episodes = 6000
     # for i in range(num_episodes):
@@ -169,16 +179,16 @@ if __name__ == '__main__':
     # x = env.render()
     # displayImage(x)
     
-    # for i in range(1500):
+    # for i in range(300):
     #     print(i)
     #     if not done:
     #         action = algo.compute_single_action(obs)
-    #         print("Action: ", action)
+    #         # print("Action: ", action)
     #         obs, reward, done, _ = env.step(action)
-    #         print("ROBOT: ", env.robot.pose)
-    #         print("Observation:",obs)
-    #         print("Reward: ", reward)
-    #         print("Done",done)
+    #         # print("ROBOT: ", env.robot.pose)
+    #         # print("Observation:",obs)
+    #         # print("Reward: ", reward)
+    #         # print("Done",done)
     #     else:
     #         print("Done")
 
