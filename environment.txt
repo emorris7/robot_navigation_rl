@@ -1,0 +1,4 @@
+conda install -c conda-forge gym
+pip install -U "ray[rllib]"
+pytorch=1.13.0=cpu_py310h7410233_0
+tensorboard
