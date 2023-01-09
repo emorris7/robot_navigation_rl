@@ -9,7 +9,7 @@ import func_timeout
 
 WAYPOINT_GRID_SIZE = 19
 
-class SimpleEnvironmentWP(SimpleRobotEnviromentCO):
+class SimpleRobotEnvironmentWP(SimpleRobotEnviromentCO):
 
     def __init__(self, render_mode: Optional[str] = None):
         super().__init__(render_mode)
@@ -24,7 +24,7 @@ class SimpleEnvironmentWP(SimpleRobotEnviromentCO):
             try:
                 self.way_points = func_timeout.func_timeout(10, plot_path, args=[self.robot.pose[:2], self.goal_position[:2], self.grid_size, WAYPOINT_GRID_SIZE, self.obstacles])
             except func_timeout.FunctionTimedOut:
-                print("reset")
+                # print("reset")
                 self.reset_positions()
                 # self.way_points = None
         # self.way_points = plot_path(start_position=self.robot.pose[:2], goal_position=self.goal_position[:2], continuous_size=self.grid_size, grid_size=WAYPOINT_GRID_SIZE, obstacles=self.obstacles)

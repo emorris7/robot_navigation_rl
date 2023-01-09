@@ -3,6 +3,7 @@ from ray.rllib.algorithms.sac import SACConfig
 from ray.tune.logger import pretty_print
 from env.SimpleEnvironment import SimpleRobotEnviroment
 from env.SimpleEnvironment_condensed_obs import SimpleRobotEnviromentCO
+from env.SimpleEnvironment_waypoints import SimpleRobotEnvironmentWP
 import numpy as np
 from ray.rllib.algorithms.algorithm import Algorithm
 
@@ -104,11 +105,21 @@ if __name__ == '__main__':
     # print(algo.config.horizon)
     # print("m")
 
+    # algo = (
+    #     SACConfig()
+    #     .rollouts(num_rollout_workers=8,horizon=600)
+    #     .resources(num_gpus=0)
+    #     .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
+    #     .callbacks(GoalCallbacksCO)
+    #     .framework(framework="torch")
+    #     .build()
+    # )
+
     algo = (
         SACConfig()
         .rollouts(num_rollout_workers=8,horizon=600)
         .resources(num_gpus=0)
-        .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
+        .environment(SimpleRobotEnvironmentWP, env_config={"render_mode":"rgb_array"})
         .callbacks(GoalCallbacksCO)
         .framework(framework="torch")
         .build()

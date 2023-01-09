@@ -137,16 +137,16 @@ def plot_path_grid(start_position, goal_position, continuous_size, grid_size, ob
     goal_position_grid = (continuous_to_grid(goal_position[X], block_size=block_size), continuous_to_grid(goal_position[Y], block_size=block_size))
 
     grid = create_grid(block_size=block_size, grid_size=grid_size, obstacles=obstacles)
-    print(grid)
-    print("finding path")
-    print(start_position_grid)
-    print(goal_position_grid)
+    # print(grid)
+    # print("finding path")
+    # print(start_position_grid)
+    # print(goal_position_grid)
     path = astar(grid, start_position_grid, goal_position_grid)
 
-    print(path)
+    # print(path)
     for i in path:
         grid[i[0]][i[1]] = 2
-    print(grid)
+    # print(grid)
     return path
 
 
