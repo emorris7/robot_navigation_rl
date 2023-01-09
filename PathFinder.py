@@ -67,12 +67,12 @@ class GoalCallbacksCO(DefaultCallbacks):
                        policies: Dict[str, Policy], episode: MultiAgentEpisode,
                        **kwargs):
         final_distance = episode.last_observation_for()[0]
-        final_angle_diff = abs(episode.last_observation_for()[2])
+        # final_angle_diff = abs(episode.last_observation_for()[2])
         success = episode.last_info_for()["Success"]
         crash = episode.last_info_for()["Crash"]
-        # goal_yaw = episode.last_observation_for()[3]
-        # final_yaw = episode.last_observation_for()[2]
-        # final_angle_diff = min(np.abs(goal_yaw - final_yaw), 2*np.pi - np.abs(goal_yaw - final_yaw))
+        goal_yaw = episode.last_observation_for()[3]
+        final_yaw = episode.last_observation_for()[2]
+        final_angle_diff = min(np.abs(goal_yaw - final_yaw), 2*np.pi - np.abs(goal_yaw - final_yaw))
 
         episode.custom_metrics["final_distance"] = final_distance
         episode.custom_metrics["final_angle_difference"] = final_angle_diff
@@ -120,10 +120,10 @@ if __name__ == '__main__':
         .build()
     )
     
-    # For testing
-    # algo.restore("/Users/emilymorris/ray_results/SAC_sensors_dist_-.25_2023-01-08_19-03-20xtel30ec/checkpoint_000751/")
+    # # For testing
+    # algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnviromentCO_2023-01-09_00-14-05kc_mr_w7/checkpoint_001500/")
 
-    num_episodes = 1500
+    num_episodes = 3000
     for i in range(num_episodes):
         print(i)
         result = algo.train()
@@ -151,7 +151,7 @@ if __name__ == '__main__':
     # x = env.render()
     # displayImage(x)
     
-    # for i in range(100):
+    # for i in range(1500):
     #     print(i)
     #     if not done:
     #         action = algo.compute_single_action(obs)
