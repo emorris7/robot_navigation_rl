@@ -1,7 +1,7 @@
 # code taken from https://medium.com/@nicholas.w.swift/easy-a-star-pathfinding-7e6689c7f7b2
 import numpy as np
 from env.SimpleEnvironment import Obstacle
-from env.SimpleEnvironment import X,Y
+from env.SimpleEnvironment import X,Y, ROBOT_RADIUS
 
 class Node():
     """A node class for A* Pathfinding"""
@@ -103,7 +103,7 @@ def astar(maze, start, end):
 
 def continuous_to_grid(continuous_coord, block_size):
     grid = int(np.round(continuous_coord / block_size))
-    print(grid)
+    # print(grid)
     return grid
 
 def grid_to_continuous(grid_coord, block_size):
@@ -114,13 +114,16 @@ def create_grid(block_size, grid_size, obstacles: list[Obstacle]):
     obstacle_map = np.zeros(shape=(grid_size,grid_size))
 
     for o in obstacles:
+        # Give a bit of an offset from the obstacle 
+        # min_x_min_y = o.position - o.radius - 0.01 - ROBOT_RADIUS
+        # max_x_max_y = o.position + o.radius + 0.01 + ROBOT_RADIUS
         min_x_min_y = o.position - o.radius
         max_x_max_y = o.position + o.radius
 
-        min_x = continuous_to_grid(min_x_min_y[X], block_size=block_size)
-        min_y = continuous_to_grid(min_x_min_y[Y], block_size=block_size)
-        max_x = continuous_to_grid(max_x_max_y[X], block_size=block_size)
-        max_y = continuous_to_grid(max_x_max_y[Y], block_size=block_size)
+        min_x = max(continuous_to_grid(min_x_min_y[X], block_size=block_size), 0)
+        min_y = max(continuous_to_grid(min_x_min_y[Y], block_size=block_size), 0)
+        max_x = min(continuous_to_grid(max_x_max_y[X], block_size=block_size), grid_size-1)
+        max_y = min(continuous_to_grid(max_x_max_y[Y], block_size=block_size), grid_size-1)
 
         for i in range(min_x, max_x+1):
             for j in range(min_y, max_y+1):
@@ -128,19 +131,30 @@ def create_grid(block_size, grid_size, obstacles: list[Obstacle]):
 
     return obstacle_map
 
-def plot_path(start_position, goal_position, continuous_size, grid_size, obstacles: list[Obstacle]):
+def plot_path_grid(start_position, goal_position, continuous_size, grid_size, obstacles: list[Obstacle]):
     block_size = continuous_size/grid_size 
     start_position_grid = (continuous_to_grid(start_position[X], block_size=block_size), continuous_to_grid(start_position[Y], block_size=block_size))
     goal_position_grid = (continuous_to_grid(goal_position[X], block_size=block_size), continuous_to_grid(goal_position[Y], block_size=block_size))
 
     grid = create_grid(block_size=block_size, grid_size=grid_size, obstacles=obstacles)
+    print(grid)
+    print("finding path")
+    print(start_position_grid)
+    print(goal_position_grid)
     path = astar(grid, start_position_grid, goal_position_grid)
 
+    print(path)
     for i in path:
         grid[i[0]][i[1]] = 2
     print(grid)
     return path
 
+
+def plot_path(start_position, goal_position, continuous_size, grid_size, obstacles: list[Obstacle]):
+    block_size = continuous_size/grid_size 
+    grid_path = plot_path_grid(start_position, goal_position, continuous_size, grid_size, obstacles)
+    path = [np.array([grid_to_continuous(point[0], block_size=block_size), grid_to_continuous(point[1], block_size=block_size)]) for point in grid_path]
+    return path
 
 def main():
 

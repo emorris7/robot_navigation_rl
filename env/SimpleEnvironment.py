@@ -27,7 +27,7 @@ GOAL_REWARD_DISTANCE = 0.2
 ROBOT_RADIUS = 0.105 / 2
 
 # Robot and obstacle initilization constants
-NUM_OBSTACLES = 10
+NUM_OBSTACLES = 1
 INIT_DISTANCE_FROM_GOAL = 0.7
 
 class SimpleRobotEnviroment(Env):
@@ -132,12 +132,12 @@ class SimpleRobotEnviroment(Env):
         reward_proportion = 0.5
         # reward = - normalized_dist if distance >= GOAL_REWARD_DISTANCE else (-0.9 * (normalized_dist*reward_proportion + (angle_diff/(np.pi))*(1-reward_proportion)))
         norm_goal_reward_distance = GOAL_REWARD_DISTANCE/max_distance
-        reward = - normalized_dist if distance > GOAL_REWARD_DISTANCE else \
-            (- (normalized_dist*reward_proportion + (angle_diff/(np.pi))*norm_goal_reward_distance*(1-reward_proportion)))
+        # reward = - normalized_dist if distance > GOAL_REWARD_DISTANCE else \
+        #     (- (normalized_dist*reward_proportion + (angle_diff/(np.pi))*norm_goal_reward_distance*(1-reward_proportion)))
         # reward = - normalized_dist
         # print("Angle diff ", angle_diff, " angle robot ", self.goal_position[YAW], " angle goal ", self.robot.pose[YAW])
         # reward = -distance if distance >= GOAL_REWARD_DISTANCE else (-distance+np.pi-angle_diff)
-        # reward = -distance-(angle_diff/np.pi)
+        reward = -normalized_dist-(angle_diff/np.pi)
         # if reward > 10:
         #     print("Angle diff: ", angle_diff)
         #     print("Distance: ", distance)
@@ -196,7 +196,6 @@ class SimpleRobotEnviroment(Env):
         self.steps_beyond_terminated = None
         self.screen = None
         self.clock = None
-        self.path = [np.copy(self.robot.pose[:2])]
 
         # print("ROBOT: ", self.robot.pose)
         # print("GOAL: ", self.goal_position)
@@ -487,6 +486,8 @@ class SimpleRobotEnviroment(Env):
                     if np.linalg.norm(o.position - rand_pos) < (o.radius + self.obstacles[i].radius):
                         collide = True
                         break
+        # Reset the path array
+        self.path = [np.copy(self.robot.pose[:2])]
                 
             
 

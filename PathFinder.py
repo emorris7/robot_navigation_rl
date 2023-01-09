@@ -3,12 +3,6 @@ from ray.rllib.algorithms.sac import SACConfig
 from ray.tune.logger import pretty_print
 from env.SimpleEnvironment import SimpleRobotEnviroment
 from env.SimpleEnvironment_condensed_obs import SimpleRobotEnviromentCO
-from env.SimpleEnvironment import GOAL_DISTANCE, GOAL_ANGLE
-import ray.rllib.utils as u
-from gym.wrappers import TimeLimit
-from gym import make
-from ray.tune.registry import register_env
-from gym.envs.registration import register
 import numpy as np
 from ray.rllib.algorithms.algorithm import Algorithm
 
@@ -112,7 +106,7 @@ if __name__ == '__main__':
 
     algo = (
         SACConfig()
-        .rollouts(num_rollout_workers=1,horizon=600)
+        .rollouts(num_rollout_workers=8,horizon=600)
         .resources(num_gpus=0)
         .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
         .callbacks(GoalCallbacksCO)
@@ -123,7 +117,7 @@ if __name__ == '__main__':
     # # For testing
     # algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnviromentCO_2023-01-09_00-14-05kc_mr_w7/checkpoint_001500/")
 
-    num_episodes = 3000
+    num_episodes = 6000
     for i in range(num_episodes):
         print(i)
         result = algo.train()
