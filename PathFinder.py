@@ -17,7 +17,7 @@ from ray.rllib.policy import Policy
 from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 
-SEED = 0
+SEED = 2048
 
 class GoalCallbacks(DefaultCallbacks):
 
@@ -45,12 +45,12 @@ class GoalCallbacksCO(DefaultCallbacks):
                        policies: Dict[str, Policy], episode: MultiAgentEpisode,
                        **kwargs):
         final_distance = episode.last_observation_for()[0]
-        # final_angle_diff = abs(episode.last_observation_for()[2])
+        final_angle_diff = abs(episode.last_observation_for()[2])
         success = episode.last_info_for()["Success"]
         crash = episode.last_info_for()["Crash"]
-        goal_yaw = episode.last_observation_for()[3]
-        final_yaw = episode.last_observation_for()[2]
-        final_angle_diff = min(np.abs(goal_yaw - final_yaw), 2*np.pi - np.abs(goal_yaw - final_yaw))
+        # goal_yaw = episode.last_observation_for()[3]
+        # final_yaw = episode.last_observation_for()[2]
+        # final_angle_diff = min(np.abs(goal_yaw - final_yaw), 2*np.pi - np.abs(goal_yaw - final_yaw))
 
         episode.custom_metrics["final_distance"] = final_distance
         episode.custom_metrics["final_angle_difference"] = final_angle_diff
@@ -108,30 +108,32 @@ if __name__ == '__main__':
     #     .debugging(seed=SEED)
     #     .build()
     # )
-    # algo = (
-    #     SACConfig()
-    #     .rollouts(num_rollout_workers=8,horizon=600)
-    #     .resources(num_gpus=0)
-    #     .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
-    #     .callbacks(GoalCallbacksCO)
-    #     .framework(framework="torch")
-          # Seed for reproducibility and statistical significance
-    #     .debugging(seed=SEED)
-    #     .build()
-    # )
 
-    horizon_val = 300 
+    horizon_val = 600 
     algo = (
         SACConfig()
         .rollouts(num_rollout_workers=8,horizon=horizon_val)
         .resources(num_gpus=0)
-        .environment(SimpleRobotEnviroment, env_config={"horizon":horizon_val, "render_mode":"rgb_array"})
-        .callbacks(GoalCallbacks)
+        .environment(SimpleRobotEnviromentCO, env_config={"horizon":horizon_val,"render_mode":"rgb_array"})
+        .callbacks(GoalCallbacksCO)
         .framework(framework="torch")
         # Seed for reproducibility and statistical significance
         .debugging(seed=SEED)
         .build()
     )
+
+    
+    # algo = (
+    #     SACConfig()
+    #     .rollouts(num_rollout_workers=8,horizon=horizon_val)
+    #     .resources(num_gpus=0)
+    #     .environment(SimpleRobotEnviroment, env_config={"horizon":horizon_val, "render_mode":"rgb_array"})
+    #     .callbacks(GoalCallbacks)
+    #     .framework(framework="torch")
+    #     # Seed for reproducibility and statistical significance
+    #     .debugging(seed=SEED)
+    #     .build()
+    # )
 
     # algo = (
     #     SACConfig()
