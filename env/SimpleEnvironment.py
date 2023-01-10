@@ -4,6 +4,7 @@ from gym.spaces import Box
 import numpy as np
 from typing import Optional
 from gym.error import DependencyNotInstalled
+from ray.rllib.env.env_context import EnvContext
 
 # Assume the robot cannot go backwards and does not stop moving (have max speed of 0.2 in assignments)
 # Was using 0.8
@@ -38,9 +39,17 @@ class SimpleRobotEnviroment(Env):
         "render_fps": 50,
     }
 
-    def __init__(self, render_mode: Optional[str] = None):
+    # def __init__(self, horizon, render_mode: Optional[str] = None):
+    def __init__(self, config: EnvContext):
         # define your environment
         # action space, observation space
+
+        # Set values from config, set horizon val, max number of training steps
+        self.horizon = float(config["horizon"])
+        self.render_mode = config["render_mode"]
+
+        assert (self.horizon != None), "Horizon value must be specified to initilialise the environment"
+        assert (self.render_mode != None), "Horizon value must be specified to initilialise the environment"
 
         # Set the grid size that we're operating in, use continuous gridspace
         self.grid_size = 2.0
@@ -86,7 +95,7 @@ class SimpleRobotEnviroment(Env):
         # For rendering
         self.path = [np.copy(self.robot.pose[:2])]
         self.steps_beyond_terminated = None
-        self.render_mode = render_mode
+        # self.render_mode = render_mode
 
         self.scaled_offset = 30
         self.screen_width = 600 + self.scaled_offset
@@ -121,19 +130,19 @@ class SimpleRobotEnviroment(Env):
         goal_position_x_y = self.goal_position[:2]
         # Distance to goal
         distance = np.linalg.norm(goal_position_x_y - robot_x_y)
-        # Difference between current angle and goal angle, smallest angle either anti-clockwise or clockwise
-        angle_diff = min(np.abs(self.goal_position[YAW] - self.robot.pose[YAW]), 2*np.pi - np.abs(self.goal_position[YAW] - self.robot.pose[YAW]))
-        # Scale the outputs so the angle difference doesn't overwhelm the reward function, distance and angle contribute the same amount to the reward function
+        # # Difference between current angle and goal angle, smallest angle either anti-clockwise or clockwise
+        # angle_diff = min(np.abs(self.goal_position[YAW] - self.robot.pose[YAW]), 2*np.pi - np.abs(self.goal_position[YAW] - self.robot.pose[YAW]))
+        # # Scale the outputs so the angle difference doesn't overwhelm the reward function, distance and angle contribute the same amount to the reward function
         max_distance = np.linalg.norm(np.array([self.grid_size, self.grid_size]))
-        # print("Dist ", distance, " angle_diff: ", angle_diff)
-        # reward = - (distance/(max_distance) + angle_diff/(2*np.pi))*self.grid_size
+        # # print("Dist ", distance, " angle_diff: ", angle_diff)
+        # # reward = - (distance/(max_distance) + angle_diff/(2*np.pi))*self.grid_size
         normalized_dist = distance/max_distance
-        # reward_proportion = np.tanh(normalized_dist)/GOAL_REWARD_DISTANCE
-        reward_proportion = 0.5
-        # reward = - normalized_dist if distance >= GOAL_REWARD_DISTANCE else (-0.9 * (normalized_dist*reward_proportion + (angle_diff/(np.pi))*(1-reward_proportion)))
-        norm_goal_reward_distance = GOAL_REWARD_DISTANCE/max_distance
-        reward = - normalized_dist if distance > GOAL_REWARD_DISTANCE else \
-            (- (normalized_dist*reward_proportion + (angle_diff/(np.pi))*norm_goal_reward_distance*(1-reward_proportion)))
+        # # reward_proportion = np.tanh(normalized_dist)/GOAL_REWARD_DISTANCE
+        # reward_proportion = 0.5
+        # # reward = - normalized_dist if distance >= GOAL_REWARD_DISTANCE else (-0.9 * (normalized_dist*reward_proportion + (angle_diff/(np.pi))*(1-reward_proportion)))
+        # norm_goal_reward_distance = GOAL_REWARD_DISTANCE/max_distance
+        # reward = - normalized_dist if distance > GOAL_REWARD_DISTANCE else \
+        #     (- (normalized_dist*reward_proportion + (angle_diff/(np.pi))*norm_goal_reward_distance*(1-reward_proportion)))
         # reward = - normalized_dist
         # print("Angle diff ", angle_diff, " angle robot ", self.goal_position[YAW], " angle goal ", self.robot.pose[YAW])
         # reward = -distance if distance >= GOAL_REWARD_DISTANCE else (-distance+np.pi-angle_diff)
@@ -141,6 +150,15 @@ class SimpleRobotEnviroment(Env):
         # if reward > 10:
         #     print("Angle diff: ", angle_diff)
         #     print("Distance: ", distance)
+
+        ## NEW
+        # Calculate the difference in angles using unit vectors representing each angle, max angle diff value is sqrt(2)
+        robot_angle_vector = np.array([np.cos(self.robot.pose[YAW]), np.sin(self.robot.pose[YAW])])
+        goal_angle_vector = np.array([np.cos(self.goal_position[YAW]), np.sin(self.goal_position[YAW])])
+        angle_diff = np.linalg.norm(goal_angle_vector - robot_angle_vector)
+
+        # scale angle reward to ensure it doesn't blow up and cause the robot to sit just out of finising range
+        reward = -normalized_dist if distance > GOAL_DISTANCE else (np.sqrt(2)/angle_diff)/(np.sqrt(2)/GOAL_ANGLE)
 
         # Record dictionary
         info_dict = {}
@@ -150,6 +168,7 @@ class SimpleRobotEnviroment(Env):
         # Compute done
         done = False
         # Large negative reward to ensure agent doesn't just learn to crash into the wall
+        # CHANGE FROM -1200, scale based on number of training iterations
         collision_reward = -1200
         # if robot is outside the grid (collides with a wall)
         if (self.robot.pose[X] + self.robot.radius >= self.grid_size) or (self.robot.pose[Y] + self.robot.radius >= self.grid_size) \
@@ -170,6 +189,7 @@ class SimpleRobotEnviroment(Env):
             elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
             # elif distance <= GOAL_DISTANCE:
                 done = True
+                # CHANGED FROM 1400
                 reward += 1400
                 info_dict["Success"] = 1
         # Allow us to throw warning and stop unexpected behaviour
@@ -183,6 +203,10 @@ class SimpleRobotEnviroment(Env):
 
         # if reward > 10:
         #     print("Big reward: ", reward)
+
+        # Scale reward to between -1 and 1, divide by the horizon number
+        reward = np.tanh(reward/self.horizon)
+
         return np.array(observation), reward, done, info_dict
 
     def reset(self):

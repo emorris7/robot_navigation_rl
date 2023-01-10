@@ -3,11 +3,13 @@ from typing import Optional
 from env.SimpleEnvironment import MAX_SENSOR_DISTANCE, X, Y, YAW, GOAL_REWARD_DISTANCE
 import numpy as np
 from gym.spaces import Box
+from ray.rllib.env.env_context import EnvContext
 
 class SimpleRobotEnviromentCO(SimpleRobotEnviroment):
 
-    def __init__(self, render_mode: Optional[str] = None):
-        super().__init__(render_mode)
+    # def __init__(self, horizon, render_mode: Optional[str] = None):
+    def __init__(self, config: EnvContext):
+        super().__init__(config)
 
         # Define observation space, [distance to goal, angle to goal position, difference between current and goal angles, sensor readings (check how many from assignment/Prorok code) (paper uses 30)]
         # observation_shape = self.num_sensors + 3

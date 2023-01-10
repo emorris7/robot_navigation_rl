@@ -6,13 +6,15 @@ import numpy as np
 from gym import logger
 from gym.error import DependencyNotInstalled
 import func_timeout
+from ray.rllib.env.env_context import EnvContext
 
 WAYPOINT_GRID_SIZE = 19
 
 class SimpleRobotEnvironmentWP(SimpleRobotEnviroment):
 
-    def __init__(self, render_mode: Optional[str] = None):
-        super().__init__(render_mode)
+    # def __init__(self, horizon, render_mode: Optional[str] = None):
+    def __init__(self, config: EnvContext):
+        super().__init__(config)
 
         # self.goal_position = np.array([1.5,1.5,np.pi/2])
         # self.robot = SimpleRobot(np.array([0.3,0.3,-np.pi/1.5]), 0.105 / 2)
