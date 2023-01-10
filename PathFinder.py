@@ -120,7 +120,7 @@ if __name__ == '__main__':
     #     .build()
     # )
 
-    horizon_val = 200 
+    horizon_val = 300 
     algo = (
         SACConfig()
         .rollouts(num_rollout_workers=8,horizon=horizon_val)
@@ -159,7 +159,7 @@ if __name__ == '__main__':
 
     # Set all our seeds for the environment
     set_seeds(seed=SEED)
-    
+
     i = 0
     while True:
         print(i)

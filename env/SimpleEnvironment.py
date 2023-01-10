@@ -143,7 +143,7 @@ class SimpleRobotEnviroment(Env):
         # norm_goal_reward_distance = GOAL_REWARD_DISTANCE/max_distance
         # reward = - normalized_dist if distance > GOAL_REWARD_DISTANCE else \
         #     (- (normalized_dist*reward_proportion + (angle_diff/(np.pi))*norm_goal_reward_distance*(1-reward_proportion)))
-        # reward = - normalized_dist
+        reward = - normalized_dist
         # print("Angle diff ", angle_diff, " angle robot ", self.goal_position[YAW], " angle goal ", self.robot.pose[YAW])
         # reward = -distance if distance >= GOAL_REWARD_DISTANCE else (-distance+np.pi-angle_diff)
         # reward = -normalized_dist-(angle_diff/np.pi)
@@ -153,13 +153,13 @@ class SimpleRobotEnviroment(Env):
 
         ## NEW
         # Calculate the difference in angles using unit vectors representing each angle, max angle diff value is sqrt(2)
-        robot_angle_vector = np.array([np.cos(self.robot.pose[YAW]), np.sin(self.robot.pose[YAW])])
-        goal_angle_vector = np.array([np.cos(self.goal_position[YAW]), np.sin(self.goal_position[YAW])])
-        angle_diff = np.linalg.norm(goal_angle_vector - robot_angle_vector)
+        # robot_angle_vector = np.array([np.cos(self.robot.pose[YAW]), np.sin(self.robot.pose[YAW])])
+        # goal_angle_vector = np.array([np.cos(self.goal_position[YAW]), np.sin(self.goal_position[YAW])])
+        # angle_diff = np.linalg.norm(goal_angle_vector - robot_angle_vector)
 
         # scale angle reward to ensure it doesn't blow up and cause the robot to sit just out of finising range
         # reward = -normalized_dist if distance > GOAL_DISTANCE else (np.sqrt(2)/angle_diff)/(np.sqrt(2)/GOAL_ANGLE)
-        reward = -normalized_dist
+        # reward = -normalized_dist
 
         # Record dictionary
         info_dict = {}
@@ -190,7 +190,6 @@ class SimpleRobotEnviroment(Env):
             # elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
             elif distance <= GOAL_DISTANCE:
                 done = True
-                # CHANGED FROM 1400
                 reward += 1400
                 info_dict["Success"] = 1
         # Allow us to throw warning and stop unexpected behaviour
@@ -205,8 +204,8 @@ class SimpleRobotEnviroment(Env):
         # if reward > 10:
         #     print("Big reward: ", reward)
 
-        # Scale reward to between -1 and 1, divide by the horizon number
-        reward = np.tanh(reward/self.horizon)
+        # # Scale reward to between -1 and 1, divide by the horizon number
+        # reward = np.tanh(reward/self.horizon)
 
         return np.array(observation), reward, done, info_dict
 
