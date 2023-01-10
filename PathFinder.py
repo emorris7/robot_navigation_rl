@@ -15,6 +15,8 @@ from ray.rllib.policy import Policy
 from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 
+# from ray.rllib.env.apis.task_settable_env import TaskSettableEnv
+
 # import tensorflow_probability as tpf
 
 
@@ -63,12 +65,12 @@ class GoalCallbacksCO(DefaultCallbacks):
                        policies: Dict[str, Policy], episode: MultiAgentEpisode,
                        **kwargs):
         final_distance = episode.last_observation_for()[0]
-        final_angle_diff = abs(episode.last_observation_for()[2])
+        # final_angle_diff = abs(episode.last_observation_for()[2])
         success = episode.last_info_for()["Success"]
         crash = episode.last_info_for()["Crash"]
-        # goal_yaw = episode.last_observation_for()[3]
-        # final_yaw = episode.last_observation_for()[2]
-        # final_angle_diff = min(np.abs(goal_yaw - final_yaw), 2*np.pi - np.abs(goal_yaw - final_yaw))
+        goal_yaw = episode.last_observation_for()[3]
+        final_yaw = episode.last_observation_for()[2]
+        final_angle_diff = min(np.abs(goal_yaw - final_yaw), 2*np.pi - np.abs(goal_yaw - final_yaw))
 
         episode.custom_metrics["final_distance"] = final_distance
         episode.custom_metrics["final_angle_difference"] = final_angle_diff
