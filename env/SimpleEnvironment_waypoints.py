@@ -1,5 +1,5 @@
 from typing import Optional
-from env.SimpleEnvironment import X,Y, YAW, SimpleRobot, Obstacle
+from env.SimpleEnvironment import X,Y, YAW, SimpleRobot, Obstacle, SimpleRobotEnviroment
 from env.SimpleEnvironment_condensed_obs import SimpleRobotEnviromentCO
 from waypoints.a_star import plot_path
 import numpy as np
@@ -9,7 +9,7 @@ import func_timeout
 
 WAYPOINT_GRID_SIZE = 19
 
-class SimpleRobotEnvironmentWP(SimpleRobotEnviromentCO):
+class SimpleRobotEnvironmentWP(SimpleRobotEnviroment):
 
     def __init__(self, render_mode: Optional[str] = None):
         super().__init__(render_mode)
@@ -35,13 +35,15 @@ class SimpleRobotEnvironmentWP(SimpleRobotEnviromentCO):
     def step(self, action):
        observation, reward, done, info_dict = super().step(action)
 
-       for i, w in enumerate(self.way_points):
-            # way points can be robot.radius + 0.05 away from an obstacle, ensure we don't reward robot for crashing by staying out of this range
-            if np.linalg.norm(w - self.robot.pose[:2]) <= self.robot.radius:
-                reward += 25
-                # remove all waypoints from behind to ensure robot is only rewarded for following the path in the forward direction
-                self.way_points = self.way_points[i+1:]
-                break
+       if not done:
+        for i, w in enumerate(self.way_points):
+                # way points can be robot.radius away from an obstacle, ensure we don't reward robot for crashing by staying out of this range
+                if np.linalg.norm(w - self.robot.pose[:2]) <= self.robot.radius+0.01:
+                    # Give the robot a reward equal to the sum of all previous rewards not collected
+                    reward += 25
+                    # remove all waypoints from behind to ensure robot is only rewarded for following the path in the forward direction
+                    self.way_points = self.way_points[i+1:]
+                    break
 
        return observation, reward, done, info_dict
 
@@ -152,7 +154,7 @@ class SimpleRobotEnvironmentWP(SimpleRobotEnviromentCO):
         for w in self.way_points:
             w_x = int((w[0] + self.offset)*self.scale)
             w_y = int((w[1] + self.offset)*self.scale)
-            w_r = int((self.robot.radius)*self.scale)
+            w_r = int((self.robot.radius+0.01)*self.scale)
             gfxdraw.aacircle(self.surf, w_x, w_y, w_r, (255, 153, 153),)
             gfxdraw.filled_circle(self.surf, w_x, w_y, w_r, (255, 153, 153),)
 

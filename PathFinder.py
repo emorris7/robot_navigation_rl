@@ -117,15 +117,15 @@ if __name__ == '__main__':
     #     .framework(framework="torch")
     #     .build()
     # )
-    algo = (
-        SACConfig()
-        .rollouts(num_rollout_workers=8,horizon=600)
-        .resources(num_gpus=0)
-        .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
-        .callbacks(GoalCallbacksCO)
-        .framework(framework="torch")
-        .build()
-    )
+    # algo = (
+    #     SACConfig()
+    #     .rollouts(num_rollout_workers=8,horizon=600)
+    #     .resources(num_gpus=0)
+    #     .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
+    #     .callbacks(GoalCallbacksCO)
+    #     .framework(framework="torch")
+    #     .build()
+    # )
 
     # algo = (
     #     SACConfig()
@@ -137,18 +137,18 @@ if __name__ == '__main__':
     #     .build()
     # )
 
-    # algo = (
-    #     SACConfig()
-    #     .rollouts(num_rollout_workers=8,horizon=600)
-    #     .resources(num_gpus=0)
-    #     .environment(SimpleRobotEnvironmentWP, env_config={"render_mode":"rgb_array"})
-    #     .callbacks(GoalCallbacksCO)
-    #     .framework(framework="torch")
-    #     .build()
-    # )
+    algo = (
+        SACConfig()
+        .rollouts(num_rollout_workers=8,horizon=200)
+        .resources(num_gpus=0)
+        .environment(SimpleRobotEnvironmentWP, env_config={"render_mode":"rgb_array"})
+        .callbacks(GoalCallbacks)
+        .framework(framework="torch")
+        .build()
+    )
     
-    # For testing
-    # algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnviromentCO_2023-01-09_22-50-52o3se9bhz/checkpoint_006691/")
+    # # For testing
+    # algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnvironmentWP_first_waypoints_test_2023-01-09_18-55-337a7jqb6p/checkpoint_006000/")
 
     # num_episodes = 6000
     # for i in range(num_episodes):
@@ -177,7 +177,7 @@ if __name__ == '__main__':
 
     
     
-    # env = SimpleRobotEnviromentCO(render_mode="rgb_array")
+    # env = SimpleRobotEnvironmentWP(render_mode="rgb_array")
     # obs = env.reset()
     # done = False
     # print(obs)
@@ -191,7 +191,7 @@ if __name__ == '__main__':
     # x = env.render()
     # displayImage(x)
     
-    # for i in range(300):
+    # for i in range(50):
     #     print(i)
     #     if not done:
     #         action = algo.compute_single_action(obs)
