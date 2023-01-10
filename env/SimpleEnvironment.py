@@ -158,7 +158,8 @@ class SimpleRobotEnviroment(Env):
         angle_diff = np.linalg.norm(goal_angle_vector - robot_angle_vector)
 
         # scale angle reward to ensure it doesn't blow up and cause the robot to sit just out of finising range
-        reward = -normalized_dist if distance > GOAL_DISTANCE else (np.sqrt(2)/angle_diff)/(np.sqrt(2)/GOAL_ANGLE)
+        # reward = -normalized_dist if distance > GOAL_DISTANCE else (np.sqrt(2)/angle_diff)/(np.sqrt(2)/GOAL_ANGLE)
+        reward = -normalized_dist
 
         # Record dictionary
         info_dict = {}
@@ -186,8 +187,8 @@ class SimpleRobotEnviroment(Env):
                 reward += collision_reward
                 info_dict["Crash"] = 1
             # if the robot reaches the goal (is within some distance of the goal position)
-            elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
-            # elif distance <= GOAL_DISTANCE:
+            # elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
+            elif distance <= GOAL_DISTANCE:
                 done = True
                 # CHANGED FROM 1400
                 reward += 1400

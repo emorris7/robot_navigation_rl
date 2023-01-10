@@ -6,6 +6,8 @@ from env.SimpleEnvironment import SimpleRobotEnviroment
 from env.SimpleEnvironment_condensed_obs import SimpleRobotEnviromentCO
 from env.SimpleEnvironment_waypoints import SimpleRobotEnvironmentWP
 import numpy as np
+import torch
+import random
 from ray.rllib.algorithms.algorithm import Algorithm
 
 # for the custom callback
@@ -15,29 +17,7 @@ from ray.rllib.policy import Policy
 from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 
-# from ray.rllib.env.apis.task_settable_env import TaskSettableEnv
-
-# import tensorflow_probability as tpf
-
-
-# env = SimpleRobotEnviroment(render_mode="rgb_array") 
-# print(env.spec)
-
-# # u.check_env(SimpleRobotEnviroment(render_mode="rgb_array"))
-
-# def env_creator(env_config):
-#     register(
-#         id='simple-robot-env-v01',
-#         entry_point='SimplePathFinder.env:SimpleRobotEnviroment',
-#         max_episode_steps=200,
-#     )
-#     env = make("simple-robot-env-v01")
-#     # env = SimpleRobotEnviroment(render_mode=env_config["render_mode"])
-#     # env = TimeLimit(env, max_episode_steps=100)
-#     return env  # return an env instance
-
-# register_env("simple-robot-env-v01", env_creator)
-# env = make('simple-robot-env-v0')
+SEED = 0
 
 class GoalCallbacks(DefaultCallbacks):
 
@@ -77,6 +57,11 @@ class GoalCallbacksCO(DefaultCallbacks):
         episode.custom_metrics["reached_goal"] = success
         episode.custom_metrics["crash"] = crash
 
+def set_seeds(seed):
+    torch.manual_seed(seed)  # Sets seed for PyTorch RNG
+    torch.cuda.manual_seed_all(seed)  # Sets seeds of GPU RNG
+    np.random.seed(seed=seed)  # Set seed for NumPy RNG
+    random.seed(seed)
 
 if __name__ == '__main__':
 
@@ -90,6 +75,8 @@ if __name__ == '__main__':
     #     .resources(num_gpus=0)
     #     .environment(SimpleRobotEnviroment, env_config={"render_mode":"rgb_array"})
     #     .callbacks(GoalCallbacks)
+             # Seed for reproducibility and statistical significance
+    #     .debugging(seed=SEED)
     #     .build()
     # )
 
@@ -103,6 +90,8 @@ if __name__ == '__main__':
     #     .resources(num_gpus=0)
     #     .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
     #     .callbacks(GoalCallbacksCO)
+             # Seed for reproducibility and statistical significance
+    #     .debugging(seed=SEED)
     #     .build()
     # )
     # print(algo.config.horizon)
@@ -115,6 +104,8 @@ if __name__ == '__main__':
     #     .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
     #     .callbacks(GoalCallbacksCO)
     #     .framework(framework="torch")
+        # Seed for reproducibility and statistical significance
+    #     .debugging(seed=SEED)
     #     .build()
     # )
     # algo = (
@@ -124,6 +115,8 @@ if __name__ == '__main__':
     #     .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
     #     .callbacks(GoalCallbacksCO)
     #     .framework(framework="torch")
+          # Seed for reproducibility and statistical significance
+    #     .debugging(seed=SEED)
     #     .build()
     # )
 
@@ -135,6 +128,8 @@ if __name__ == '__main__':
         .environment(SimpleRobotEnviroment, env_config={"horizon":horizon_val, "render_mode":"rgb_array"})
         .callbacks(GoalCallbacks)
         .framework(framework="torch")
+        # Seed for reproducibility and statistical significance
+        .debugging(seed=SEED)
         .build()
     )
 
@@ -162,6 +157,9 @@ if __name__ == '__main__':
     #         checkpoint_dir = algo.save()
     #         print(f"Checkpoint saved in directory {checkpoint_dir}")
 
+    # Set all our seeds for the environment
+    set_seeds(seed=SEED)
+    
     i = 0
     while True:
         print(i)
