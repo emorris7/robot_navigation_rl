@@ -8,7 +8,7 @@ from ray.rllib.env.env_context import EnvContext
 class SimpleRobotEnviromentCO(SimpleRobotEnviroment):
 
     # def __init__(self, horizon, render_mode: Optional[str] = None):
-    def __init__(self, config: EnvContext):
+    def __init__(self, config: Optional[EnvContext]=None):
         super().__init__(config)
 
         # Define observation space, [distance to goal, angle to goal position, difference between current and goal angles, sensor readings (check how many from assignment/Prorok code) (paper uses 30)]

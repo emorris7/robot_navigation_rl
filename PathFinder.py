@@ -16,8 +16,9 @@ from ray.rllib.env import BaseEnv
 from ray.rllib.policy import Policy
 from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
+from ray.rllib.env.env_context import EnvContext
 
-SEED = 2048
+SEED = 1024
 
 class GoalCallbacks(DefaultCallbacks):
 
@@ -146,7 +147,7 @@ if __name__ == '__main__':
     # )
     
     # # For testing
-    # algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnvironmentWP_first_waypoints_test_2023-01-09_18-55-337a7jqb6p/checkpoint_006000/")
+    # algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnviromentCO_2023-01-10_23-12-41qecbjmyh/checkpoint_003111/")
 
     # num_episodes = 6000
     # for i in range(num_episodes):
@@ -175,10 +176,8 @@ if __name__ == '__main__':
         
         i+=1
 
-
     
-    
-    # env = SimpleRobotEnvironmentWP(render_mode="rgb_array")
+    # env = SimpleRobotEnviromentCO()
     # obs = env.reset()
     # done = False
     # print(obs)
@@ -192,7 +191,7 @@ if __name__ == '__main__':
     # x = env.render()
     # displayImage(x)
     
-    # for i in range(50):
+    # for i in range(300):
     #     print(i)
     #     if not done:
     #         action = algo.compute_single_action(obs)

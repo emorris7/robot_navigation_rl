@@ -40,16 +40,22 @@ class SimpleRobotEnviroment(Env):
     }
 
     # def __init__(self, horizon, render_mode: Optional[str] = None):
-    def __init__(self, config: EnvContext):
+    def __init__(self, config: Optional[EnvContext]=None):
         # define your environment
         # action space, observation space
 
         # Set values from config, set horizon val, max number of training steps
-        self.horizon = float(config["horizon"])
-        self.render_mode = config["render_mode"]
+        if config is None:
+            print("Default values for horizon and render mode being set")
+            self.horizon = 200
+            self.render_mode = "rgb_array"
 
-        assert (self.horizon != None), "Horizon value must be specified to initilialise the environment"
-        assert (self.render_mode != None), "Horizon value must be specified to initilialise the environment"
+        else:
+            self.horizon = float(config["horizon"])
+            self.render_mode = config["render_mode"]
+
+            assert (self.horizon != None), "Horizon value must be specified to initilialise the environment"
+            assert (self.render_mode != None), "Horizon value must be specified to initilialise the environment"
 
         # Set the grid size that we're operating in, use continuous gridspace
         self.grid_size = 2.0
