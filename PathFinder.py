@@ -17,7 +17,7 @@ from ray.rllib.policy import Policy
 from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 
-SEED = 2048
+SEED = 4096
 
 class GoalCallbacks(DefaultCallbacks):
 
