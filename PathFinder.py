@@ -18,7 +18,7 @@ from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 from ray.rllib.env.env_context import EnvContext
 
-SEED = 1024
+SEED = 4096
 
 class GoalCallbacks(DefaultCallbacks):
 
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     # )
     
     # # For testing
-    # algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnviromentCO_2023-01-10_23-12-41qecbjmyh/checkpoint_003111/")
+    # algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnviromentCO_2023-01-11_10-25-31cu3swts5/checkpoint_003411/")
 
     # num_episodes = 6000
     # for i in range(num_episodes):
