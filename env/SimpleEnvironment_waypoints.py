@@ -25,6 +25,8 @@ class SimpleRobotEnvironmentWP(SimpleRobotEnviromentCO):
             # Dodgy hack to deal with when environments are created where its very hard/impossible to plot a path
             try:
                 self.way_points = func_timeout.func_timeout(10, plot_path, args=[self.robot.pose[:2], self.goal_position[:2], self.grid_size, WAYPOINT_GRID_SIZE, self.obstacles])
+                if self.way_points is None:
+                    self.reset_positions()
             except func_timeout.FunctionTimedOut:
                 # print("reset")
                 self.reset_positions()
@@ -57,6 +59,8 @@ class SimpleRobotEnvironmentWP(SimpleRobotEnviromentCO):
         while self.way_points is None:
             try:
                 self.way_points = func_timeout.func_timeout(10, plot_path, args=[self.robot.pose[:2], self.goal_position[:2], self.grid_size, WAYPOINT_GRID_SIZE, self.obstacles])
+                if self.way_points is None:
+                    self.reset_positions()
             except func_timeout.FunctionTimedOut:
                 self.reset_positions()
 

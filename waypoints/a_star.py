@@ -141,11 +141,14 @@ def plot_path_grid(start_position, goal_position, continuous_size, grid_size, ob
     # print("finding path")
     # print(start_position_grid)
     # print(goal_position_grid)
+    
     path = astar(grid, start_position_grid, goal_position_grid)
-
     # print(path)
-    for i in path:
-        grid[i[0]][i[1]] = 2
+
+    if path is not None:
+        for i in path:
+            grid[i[0]][i[1]] = 2
+
     # print(grid)
     return path
 
@@ -153,8 +156,11 @@ def plot_path_grid(start_position, goal_position, continuous_size, grid_size, ob
 def plot_path(start_position, goal_position, continuous_size, grid_size, obstacles: list[Obstacle]):
     block_size = continuous_size/grid_size 
     grid_path = plot_path_grid(start_position, goal_position, continuous_size, grid_size, obstacles)
-    path = [np.array([grid_to_continuous(point[0], block_size=block_size), grid_to_continuous(point[1], block_size=block_size)]) for point in grid_path]
-    return path
+    if grid_path is None:
+        return None
+    else:
+        path = [np.array([grid_to_continuous(point[0], block_size=block_size), grid_to_continuous(point[1], block_size=block_size)]) for point in grid_path]
+        return path
 
 def main():
 
