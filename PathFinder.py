@@ -16,9 +16,8 @@ from ray.rllib.env import BaseEnv
 from ray.rllib.policy import Policy
 from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
-from ray.rllib.env.env_context import EnvContext
 
-SEED = 4096
+SEED = 1024
 
 class GoalCallbacks(DefaultCallbacks):
 
@@ -98,30 +97,19 @@ if __name__ == '__main__':
     # print(algo.config.horizon)
     # print("m")
     
+
+    horizon_val = 600 
     # algo = (
-    #     MBMPOConfig()
-    #     .rollouts(num_rollout_workers=8,horizon=600)
+    #     SACConfig()
+    #     .rollouts(num_rollout_workers=8,horizon=horizon_val)
     #     .resources(num_gpus=0)
-    #     .environment(SimpleRobotEnviromentCO, env_config={"render_mode":"rgb_array"})
+    #     .environment(SimpleRobotEnviromentCO, env_config={"horizon":horizon_val,"render_mode":"rgb_array"})
     #     .callbacks(GoalCallbacksCO)
     #     .framework(framework="torch")
-        # Seed for reproducibility and statistical significance
+    #     # Seed for reproducibility and statistical significance
     #     .debugging(seed=SEED)
     #     .build()
     # )
-
-    horizon_val = 600 
-    algo = (
-        SACConfig()
-        .rollouts(num_rollout_workers=8,horizon=horizon_val)
-        .resources(num_gpus=0)
-        .environment(SimpleRobotEnviromentCO, env_config={"horizon":horizon_val,"render_mode":"rgb_array"})
-        .callbacks(GoalCallbacksCO)
-        .framework(framework="torch")
-        # Seed for reproducibility and statistical significance
-        .debugging(seed=SEED)
-        .build()
-    )
 
     
     # algo = (
@@ -136,15 +124,17 @@ if __name__ == '__main__':
     #     .build()
     # )
 
-    # algo = (
-    #     SACConfig()
-    #     .rollouts(num_rollout_workers=8,horizon=200)
-    #     .resources(num_gpus=0)
-    #     .environment(SimpleRobotEnvironmentWP, env_config={"render_mode":"rgb_array"})
-    #     .callbacks(GoalCallbacks)
-    #     .framework(framework="torch")
-    #     .build()
-    # )
+    algo = (
+        SACConfig()
+        .rollouts(num_rollout_workers=8,horizon=horizon_val)
+        .resources(num_gpus=0)
+        .environment(SimpleRobotEnvironmentWP, env_config={"horizon":horizon_val, "render_mode":"rgb_array"})
+        .callbacks(GoalCallbacksCO)
+        .framework(framework="torch")
+        # Seed for reproducibility and statistical significance
+        .debugging(seed=SEED)
+        .build()
+    )
     
     # # For testing
     # algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnviromentCO_2023-01-11_10-25-31cu3swts5/checkpoint_003411/")

@@ -10,7 +10,7 @@ from ray.rllib.env.env_context import EnvContext
 
 WAYPOINT_GRID_SIZE = 19
 
-class SimpleRobotEnvironmentWP(SimpleRobotEnviroment):
+class SimpleRobotEnvironmentWP(SimpleRobotEnviromentCO):
 
     # def __init__(self, horizon, render_mode: Optional[str] = None):
     def __init__(self, config: Optional[EnvContext] = None):
@@ -56,7 +56,7 @@ class SimpleRobotEnvironmentWP(SimpleRobotEnviroment):
         self.way_points = None
         while self.way_points is None:
             try:
-                self.way_points = func_timeout.func_timeout(20, plot_path, args=[self.robot.pose[:2], self.goal_position[:2], self.grid_size, WAYPOINT_GRID_SIZE, self.obstacles])
+                self.way_points = func_timeout.func_timeout(10, plot_path, args=[self.robot.pose[:2], self.goal_position[:2], self.grid_size, WAYPOINT_GRID_SIZE, self.obstacles])
             except func_timeout.FunctionTimedOut:
                 self.reset_positions()
 
