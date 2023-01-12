@@ -19,8 +19,8 @@ Y = 1
 YAW = 2
 
 # Permissable distance from goal
-GOAL_DISTANCE = 0.01
-GOAL_ANGLE = 0.01
+# GOAL_DISTANCE = 0.01
+# GOAL_ANGLE = 0.01
 MAX_SENSOR_DISTANCE = 0.25
 # When to start factoring in angle difference to the reward
 # Checked with 3.0 and 1.0 and 2.0 worked best
@@ -56,6 +56,11 @@ class SimpleRobotEnviroment(Env):
 
             assert (self.horizon != None), "Horizon value must be specified to initilialise the environment"
             assert (self.render_mode != None), "Horizon value must be specified to initilialise the environment"
+
+        # Set the tolerance values for the angle and distance, changed from 0.01
+        self.goal_tolerance = 0.16
+        # Set the iteration on which the tolerance value was last changed, for curriculum learning
+        self.tolerance_step_change = 0
 
         # Set the grid size that we're operating in, use continuous gridspace
         self.grid_size = 2.0
@@ -136,20 +141,20 @@ class SimpleRobotEnviroment(Env):
         goal_position_x_y = self.goal_position[:2]
         # Distance to goal
         distance = np.linalg.norm(goal_position_x_y - robot_x_y)
-        # # Difference between current angle and goal angle, smallest angle either anti-clockwise or clockwise
-        # angle_diff = min(np.abs(self.goal_position[YAW] - self.robot.pose[YAW]), 2*np.pi - np.abs(self.goal_position[YAW] - self.robot.pose[YAW]))
-        # # Scale the outputs so the angle difference doesn't overwhelm the reward function, distance and angle contribute the same amount to the reward function
+        # Difference between current angle and goal angle, smallest angle either anti-clockwise or clockwise
+        angle_diff = min(np.abs(self.goal_position[YAW] - self.robot.pose[YAW]), 2*np.pi - np.abs(self.goal_position[YAW] - self.robot.pose[YAW]))
+        # Scale the outputs so the angle difference doesn't overwhelm the reward function, distance and angle contribute the same amount to the reward function
         max_distance = np.linalg.norm(np.array([self.grid_size, self.grid_size]))
-        # # print("Dist ", distance, " angle_diff: ", angle_diff)
-        # # reward = - (distance/(max_distance) + angle_diff/(2*np.pi))*self.grid_size
+        # print("Dist ", distance, " angle_diff: ", angle_diff)
+        # reward = - (distance/(max_distance) + angle_diff/(2*np.pi))*self.grid_size
         normalized_dist = distance/max_distance
-        # # reward_proportion = np.tanh(normalized_dist)/GOAL_REWARD_DISTANCE
-        # reward_proportion = 0.5
-        # # reward = - normalized_dist if distance >= GOAL_REWARD_DISTANCE else (-0.9 * (normalized_dist*reward_proportion + (angle_diff/(np.pi))*(1-reward_proportion)))
-        # norm_goal_reward_distance = GOAL_REWARD_DISTANCE/max_distance
-        # reward = - normalized_dist if distance > GOAL_REWARD_DISTANCE else \
-        #     (- (normalized_dist*reward_proportion + (angle_diff/(np.pi))*norm_goal_reward_distance*(1-reward_proportion)))
-        reward = - normalized_dist
+        # reward_proportion = np.tanh(normalized_dist)/GOAL_REWARD_DISTANCE
+        reward_proportion = 0.5
+        # reward = - normalized_dist if distance >= GOAL_REWARD_DISTANCE else (-0.9 * (normalized_dist*reward_proportion + (angle_diff/(np.pi))*(1-reward_proportion)))
+        norm_goal_reward_distance = GOAL_REWARD_DISTANCE/max_distance
+        reward = - normalized_dist if distance > GOAL_REWARD_DISTANCE else \
+            (- (normalized_dist*reward_proportion + (angle_diff/(np.pi))*norm_goal_reward_distance*(1-reward_proportion)))
+        # reward = - normalized_dist
         # print("Angle diff ", angle_diff, " angle robot ", self.goal_position[YAW], " angle goal ", self.robot.pose[YAW])
         # reward = -distance if distance >= GOAL_REWARD_DISTANCE else (-distance+np.pi-angle_diff)
         # reward = -normalized_dist-(angle_diff/np.pi)
@@ -176,12 +181,12 @@ class SimpleRobotEnviroment(Env):
         done = False
         # Large negative reward to ensure agent doesn't just learn to crash into the wall
         # CHANGE FROM -1200, scale based on number of training iterations
-        collision_reward = -1200
+        # collision_reward = -1200
+        collision_reward = -150
         # if robot is outside the grid (collides with a wall)
         if (self.robot.pose[X] + self.robot.radius >= self.grid_size) or (self.robot.pose[Y] + self.robot.radius >= self.grid_size) \
             or (self.robot.pose[X] <= 0.0 + self.robot.radius) or (self.robot.pose[Y] <= 0.0 + self.robot.radius):
             done = True
-            # TODO: 50
             reward += collision_reward
             info_dict["Crash"] = 1
         else:
@@ -189,14 +194,16 @@ class SimpleRobotEnviroment(Env):
             collision = np.any(np.array([o.collide(self.robot) for o in self.obstacles]))
             if collision:
                 done = True
-                # TODO 50
                 reward += collision_reward
                 info_dict["Crash"] = 1
             # if the robot reaches the goal (is within some distance of the goal position)
             # elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
-            elif distance <= GOAL_DISTANCE:
+            elif distance <= self.goal_tolerance and angle_diff <= self.goal_tolerance:
+            # elif distance <= GOAL_DISTANCE:
+            # elif distance <= self.goal_tolerance:
                 done = True
-                reward += 1400
+                # reward += 1400
+                reward += 200
                 info_dict["Success"] = 1
         # Allow us to throw warning and stop unexpected behaviour
         if done:
@@ -414,52 +421,6 @@ class SimpleRobotEnviroment(Env):
         return np.concatenate((self.robot.pose, self.goal_position, sensor_readings))
 
     def reset_positions(self):
-        # # TODO perhaps create goal and robot positions first to ensure we don't get stuck in random corners
-        # # Set random positions for obstacles
-        # for i in range(NUM_OBSTACLES):
-        #     collide = True
-        #     while collide:
-        #         rand_pos = np.random.uniform(low=self.obstacles[i].radius, high=self.grid_size-self.obstacles[i].radius, size=(2))
-        #         collide = False
-        #         # Check that the obstacle does not collide with other obstacles
-        #         for j in range(i):
-        #             o = self.obstacles[j]
-        #             if np.linalg.norm(o.position - rand_pos) < (o.radius + self.obstacles[i].radius):
-        #                 collide = True
-        #                 break
-        #     self.obstacles[i].set_position(rand_pos)
-    
-        # # minimum x and y values 
-        # def get_random_robot_pos(min, max): 
-        #     collide = True
-        #     while collide:
-        #         rand_pos = np.random.uniform(low=min, high=max, size=(2))
-                
-        #         assert np.all(rand_pos < np.array(max)), "rand_pos out of bounds"
-        #         assert np.all(rand_pos >= np.array(min)), "rand_pos out of bounds"
-
-        #         # self.robot.set_pose(np.append(rand_pos,[0.0]))
-        #         collide = False
-        #         # Check that the position does not collide with other obstacles
-        #         for o in self.obstacles:
-        #             fake_robot = SimpleRobot(np.append(rand_pos,[0.0]), ROBOT_RADIUS + 0.01)
-        #             collide = o.collide(fake_robot)
-        #             if collide:
-        #                 break
-        #     return np.append(rand_pos, [np.random.uniform(low=-np.pi, high=np.pi)])
-
-        # # Set random goal position, ensuring it does not clash with obstacles
-        # # Adding offset to ensure the robot doesn't spawn exactly touching the wall or too close to it that any movement causes crashing
-        # self.goal_position = get_random_robot_pos((0.01 + self.robot.radius , 0.01 + self.robot.radius), (self.grid_size-self.robot.radius - 0.01, self.grid_size-self.robot.radius - 0.01))
-        
-        # # Set random robot position, a certain distance away from the goal
-        # min_x = max(0.01 + self.robot.radius, self.goal_position[X] - INIT_DISTANCE_FROM_GOAL)
-        # max_x = min(self.grid_size-self.robot.radius - 0.01, self.goal_position[X] + INIT_DISTANCE_FROM_GOAL)
-        # min_y = max(0.01 + self.robot.radius, self.goal_position[Y] - INIT_DISTANCE_FROM_GOAL)
-        # max_y = min(self.grid_size-self.robot.radius - 0.01, self.goal_position[Y] + INIT_DISTANCE_FROM_GOAL)
-
-        # self.robot.set_pose(get_random_robot_pos((min_x,min_y), (max_x, max_y)))
-
         # Set random goal position, ensuring it is far enough away from the wall that the robot position can be spawned the required distance away
         # Adding offset to ensure the robot doesn't spawn exactly touching the wall or too close to it that any movement causes crashing
         min_goal_coord = 0.01 + self.robot.radius + INIT_DISTANCE_FROM_GOAL

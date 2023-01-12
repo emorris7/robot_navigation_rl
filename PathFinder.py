@@ -153,33 +153,33 @@ if __name__ == '__main__':
     # Set all our seeds for the environment
     set_seeds(seed=SEED)
 
-    i = 0
-    while True:
-        print(i)
-        result = algo.train()
-        # print(result["custom_metrics"])
-        # print(pretty_print(result))
+    # i = 0
+    # while True:
+    #     print(i)
+    #     result = algo.train()
+    #     # print(result["custom_metrics"])
+    #     # print(pretty_print(result))
 
-        if i % 10 == 0:
-            checkpoint_dir = algo.save()
-            print(f"Checkpoint saved in directory {checkpoint_dir}")
+    #     if i % 10 == 0:
+    #         checkpoint_dir = algo.save()
+    #         print(f"Checkpoint saved in directory {checkpoint_dir}")
         
-        i+=1
+    #     i+=1
 
     
-    # env = SimpleRobotEnviromentCO()
-    # obs = env.reset()
-    # done = False
-    # print(obs)
+    env = SimpleRobotEnviromentCO()
+    obs = env.reset()
+    done = False
+    print(obs)
 
-    # import matplotlib.pyplot as plt
-    # def displayImage(image):
-    #     plt.imshow(image)
-    #     plt.axis('off')
-    #     plt.show()
+    import matplotlib.pyplot as plt
+    def displayImage(image):
+        plt.imshow(image)
+        plt.axis('off')
+        plt.show()
 
-    # x = env.render()
-    # displayImage(x)
+    x = env.render()
+    displayImage(x)
     
     # for i in range(300):
     #     print(i)
