@@ -28,8 +28,8 @@ GOAL_REWARD_DISTANCE = 0.2
 ROBOT_RADIUS = 0.105 / 2
 
 # Robot and obstacle initilization constants
-NUM_OBSTACLES = 1
-INIT_DISTANCE_FROM_GOAL = 0.7
+# NUM_OBSTACLES = 1
+# INIT_DISTANCE_FROM_GOAL = 0.7
 
 class SimpleRobotEnviroment(Env):
 
@@ -58,16 +58,20 @@ class SimpleRobotEnviroment(Env):
             assert (self.render_mode != None), "Horizon value must be specified to initilialise the environment"
 
         # Set the tolerance values for the angle and distance, changed from 0.01
-        self.goal_tolerance = 0.16
+        self.goal_tolerance = 0.04
         # Set the iteration on which the tolerance value was last changed, for curriculum learning
         self.tolerance_step_change = 0
+
+        # Set the number of obstacles and the initial distance from the goal
+        self.num_obstacles = 1
+        self.init_distance_from_goal = 0.7
 
         # Set the grid size that we're operating in, use continuous gridspace
         self.grid_size = 2.0
 
         # List of obstacles in the environment
         self.obstacles = []
-        for i in range(NUM_OBSTACLES):
+        for i in range(self.num_obstacles):
             # Set now and randomly initialise later in code
             self.obstacles.append(Obstacle(0.6, 0.85, 0.1))
 
@@ -416,8 +420,8 @@ class SimpleRobotEnviroment(Env):
     def reset_positions(self):
         # Set random goal position, ensuring it is far enough away from the wall that the robot position can be spawned the required distance away
         # Adding offset to ensure the robot doesn't spawn exactly touching the wall or too close to it that any movement causes crashing
-        min_goal_coord = 0.01 + self.robot.radius + INIT_DISTANCE_FROM_GOAL
-        max_goal_coord = self.grid_size-self.robot.radius - 0.01 - INIT_DISTANCE_FROM_GOAL
+        min_goal_coord = 0.01 + self.robot.radius + self.init_distance_from_goal
+        max_goal_coord = self.grid_size-self.robot.radius - 0.01 - self.init_distance_from_goal
 
         # Check that the initialization distance is not too large and we can actually create a goal position in this range
         assert min_goal_coord < max_goal_coord, "Initialisation distance is too large for current gridsize"
@@ -425,24 +429,24 @@ class SimpleRobotEnviroment(Env):
         self.goal_position = np.append(np.random.uniform(low=min_goal_coord, high=max_goal_coord, size=(2)), [np.random.uniform(low=-np.pi, high=np.pi)])
         
         # Set random robot position, a certain distance away from the goal, we know we will be able to find a position as we have initialised our goal position for this
-        min_robot_x = self.goal_position[X] - INIT_DISTANCE_FROM_GOAL
-        max_robot_x = self.goal_position[X] + INIT_DISTANCE_FROM_GOAL
+        min_robot_x = self.goal_position[X] - self.init_distance_from_goal
+        max_robot_x = self.goal_position[X] + self.init_distance_from_goal
         robot_x = np.random.uniform(low=min_robot_x, high=max_robot_x)
 
-        y_neg = - np.sqrt(INIT_DISTANCE_FROM_GOAL**2 - (robot_x - self.goal_position[X])**2) + self.goal_position[Y]
-        y_pos = np.sqrt(INIT_DISTANCE_FROM_GOAL**2 - (robot_x - self.goal_position[X])**2) + self.goal_position[Y]
+        y_neg = - np.sqrt(self.init_distance_from_goal**2 - (robot_x - self.goal_position[X])**2) + self.goal_position[Y]
+        y_pos = np.sqrt(self.init_distance_from_goal**2 - (robot_x - self.goal_position[X])**2) + self.goal_position[Y]
         robot_y = np.random.choice([y_neg, y_pos])
 
         robot_pos = np.array([robot_x, robot_y])
 
         # Give some tolerance for the distance to deal with rounding errors
         dist_to_goal = np.linalg.norm(self.goal_position[:2] - robot_pos)
-        assert  dist_to_goal < INIT_DISTANCE_FROM_GOAL + 0.01, "Robot initialisation too far from goal, distance " + str(dist_to_goal)
-        assert dist_to_goal > INIT_DISTANCE_FROM_GOAL - 0.01, "Robot initialisation too close to goal, distance " + str(dist_to_goal)
+        assert  dist_to_goal < self.init_distance_from_goal + 0.01, "Robot initialisation too far from goal, distance " + str(dist_to_goal)
+        assert dist_to_goal > self.init_distance_from_goal - 0.01, "Robot initialisation too close to goal, distance " + str(dist_to_goal)
 
         self.robot.set_pose(np.append(robot_pos, [np.random.uniform(low=-np.pi, high=np.pi)]))
 
-        for i in range(NUM_OBSTACLES):
+        for i in range(self.num_obstacles):
             # Make sure the obstacles do not spawn too close to the robot and goal positions by slightly expanding them
             expanded_robot = SimpleRobot(self.robot.pose, ROBOT_RADIUS + 0.01)
             expanded_goal = SimpleRobot(self.goal_position, ROBOT_RADIUS + 0.01)
@@ -450,7 +454,7 @@ class SimpleRobotEnviroment(Env):
             midpoint = (self.goal_position[:2] + self.robot.pose[:2])/2.0
             collide = True
             while collide:
-                rand_pos = np.random.multivariate_normal(mean=midpoint, cov=[[INIT_DISTANCE_FROM_GOAL/4.0, 0], [0, INIT_DISTANCE_FROM_GOAL/4.0]])
+                rand_pos = np.random.multivariate_normal(mean=midpoint, cov=[[self.init_distance_from_goal/4.0, 0], [0, self.init_distance_from_goal/4.0]])
                 collide = False
 
                 self.obstacles[i].set_position(rand_pos)

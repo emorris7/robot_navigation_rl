@@ -24,6 +24,10 @@ class CurriculumSimpleEnvironment(SimpleRobotEnviroment, TaskSettableEnv):
         return task_dict
 
 def curriculum_fn(train_results, task_settable_env, env_ctx):
+    if len(train_results["custom_metrics"]) == 0:
+        print("No custom metrics, unable to adjust task")
+        return task_settable_env.get_task()
+
     success = train_results["custom_metrics"]["reached_goal_mean"]
     timesteps = train_results["timesteps_total"]
     timestep_diff = np.abs(task_settable_env.tolerance_step_change - timesteps)
@@ -58,9 +62,9 @@ if __name__ == '__main__':
         .build()
     )
 
-    set_seeds(SEED)
+    algo.restore("/Users/emilymorris/ray_results/SAC_CurriculumSimpleEnvironment_2023-01-12_12-06-33weavy2gh/checkpoint_013571/") 
 
-    algo = algo.restore("/Users/emilymorris/ray_results/SAC_CurriculumSimpleEnvironment_2023-01-12_12-06-33weavy2gh/checkpoint_013591/")
+    set_seeds(SEED)
 
     i = 0
     while True:

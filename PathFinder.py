@@ -136,8 +136,8 @@ if __name__ == '__main__':
         .build()
     )
     
-    # # For testing
-    # algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnviromentCO_2023-01-11_10-25-31cu3swts5/checkpoint_003411/")
+    # For testing
+    algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnvironmentWP_2023-01-11_16-00-50k1ew5bbn/checkpoint_002401/")
 
     # num_episodes = 6000
     # for i in range(num_episodes):
@@ -151,7 +151,7 @@ if __name__ == '__main__':
     #         print(f"Checkpoint saved in directory {checkpoint_dir}")
 
     # Set all our seeds for the environment
-    set_seeds(seed=SEED)
+    # set_seeds(seed=SEED)
 
     # i = 0
     # while True:
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     #     i+=1
 
     
-    env = SimpleRobotEnviromentCO()
+    env = SimpleRobotEnvironmentWP()
     obs = env.reset()
     done = False
     print(obs)
@@ -181,19 +181,21 @@ if __name__ == '__main__':
     x = env.render()
     displayImage(x)
     
-    # for i in range(300):
-    #     print(i)
-    #     if not done:
-    #         action = algo.compute_single_action(obs)
-    #         print("Action: ", action)
-    #         obs, reward, done, _ = env.step(action)
-    #         print("ROBOT: ", env.robot.pose)
-    #         print("Observation:",obs)
-    #         print("Reward: ", reward)
-    #         print("Done",done)
-    #     else:
-    #         print("Done")
+    for i in range(300):
+        print(i)
+        if not done:
+            action = algo.compute_single_action(obs)
+            print("Action: ", action)
+            obs, reward, done, _ = env.step(action)
+            print("ROBOT: ", env.robot.pose)
+            print("Observation:",obs)
+            print("Reward: ", reward)
+            print("Done",done)
+        else:
+            print("Done")
 
 
-    # x = env.render()
-    # displayImage(x)
+    x = env.render()
+    displayImage(x)
+
+    
