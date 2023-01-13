@@ -28,10 +28,18 @@ def curriculum_fn(train_results, task_settable_env, env_ctx):
     timesteps = train_results["timesteps_total"]
     timestep_diff = np.abs(task_settable_env.tolerance_step_change - timesteps)
     # print(timesteps)
+    # trained for 33280 iterations
+    # First change {'goal_tolerance': 0.08, 'tolerance_step_change': 502736}
+    # Second change {'goal_tolerance': 0.04, 'tolerance_step_change': 680000} (I think)
+    # Third change {'goal_tolerance': 0.02, 'tolerance_step_change': 1484720}
     if success >= 0.92 and timestep_diff >= 20000:
         print("CHANGING LEARNING TOLERANCE LEVEL")
-        new_tolerance = task_settable_env.goal_tolerance / 2
+        # new_tolerance = task_settable_env.goal_tolerance / 2
+        new_tolerance = task_settable_env.goal_tolerance - 0.01
         task_dict = {"goal_tolerance":new_tolerance, "tolerance_step_change":timesteps}
+        with open('tolerance_values.txt', 'a') as f:
+            print("Writing to file")
+            f.write(str(task_dict)+"\n")
         return task_dict
     else:
         return task_settable_env.get_task()
@@ -51,6 +59,8 @@ if __name__ == '__main__':
     )
 
     set_seeds(SEED)
+
+    algo = algo.restore("/Users/emilymorris/ray_results/SAC_CurriculumSimpleEnvironment_2023-01-12_12-06-33weavy2gh/checkpoint_013591/")
 
     i = 0
     while True:
