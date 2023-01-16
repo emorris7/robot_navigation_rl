@@ -13,8 +13,8 @@ WAYPOINT_GRID_SIZE = 19
 class SimpleRobotEnvironmentWP(SimpleRobotEnviromentCO):
 
     # def __init__(self, horizon, render_mode: Optional[str] = None):
-    def __init__(self, config: Optional[EnvContext] = None):
-        super().__init__(config)
+    def __init__(self, config: Optional[EnvContext] = None, num_obstacles = 1, init_distance = 0.7):
+        super().__init__(config, num_obstacles=num_obstacles, init_distance=init_distance)
 
         # self.goal_position = np.array([1.5,1.5,np.pi/2])
         # self.robot = SimpleRobot(np.array([0.3,0.3,-np.pi/1.5]), 0.105 / 2)

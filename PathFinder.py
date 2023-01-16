@@ -9,6 +9,7 @@ import numpy as np
 import torch
 import random
 from ray.rllib.algorithms.algorithm import Algorithm
+import cv2
 
 # for the custom callback
 from typing import Dict
@@ -62,6 +63,20 @@ def set_seeds(seed):
     torch.cuda.manual_seed_all(seed)  # Sets seeds of GPU RNG
     np.random.seed(seed=seed)  # Set seed for NumPy RNG
     random.seed(seed)
+
+def convert_images_to_video(rgb_images):
+
+    x = len(rgb_images[0])
+    y = len(rgb_images[0][0])
+    size = (x,y)
+
+    out = cv2.VideoWriter('working_solution.mp4',cv2.VideoWriter_fourcc(*'mp4v'),15, size)
+
+    for i in range(len(rgb_images)):
+        rgb_img = cv2.cvtColor(rgb_images[i], cv2.COLOR_RGB2BGR)
+        out.write(rgb_img)
+    out.release()
+
 
 if __name__ == '__main__':
 
@@ -120,7 +135,7 @@ if __name__ == '__main__':
     #     .callbacks(GoalCallbacks)
     #     .framework(framework="torch")
     #     # Seed for reproducibility and statistical significance
-    #     .debugging(seed=SEED)
+    #     # .debugging(seed=SEED)
     #     .build()
     # )
 
@@ -128,16 +143,16 @@ if __name__ == '__main__':
         SACConfig()
         .rollouts(num_rollout_workers=8,horizon=horizon_val)
         .resources(num_gpus=0)
-        .environment(SimpleRobotEnvironmentWP, env_config={"horizon":horizon_val, "render_mode":"rgb_array"})
+        .environment(SimpleRobotEnviromentCO, env_config={"horizon":horizon_val, "render_mode":"rgb_array"})
         .callbacks(GoalCallbacksCO)
         .framework(framework="torch")
         # Seed for reproducibility and statistical significance
-        .debugging(seed=SEED)
+        # .debugging(seed=SEED)
         .build()
     )
     
     # For testing
-    algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnvironmentWP_2023-01-11_16-00-50k1ew5bbn/checkpoint_002401/")
+    algo.restore("/Users/emilymorris/ray_results/SAC_SimpleRobotEnviromentCO_2023-01-11_11-48-18_3vmn6e3/checkpoint_003501")
 
     # num_episodes = 6000
     # for i in range(num_episodes):
@@ -167,7 +182,8 @@ if __name__ == '__main__':
     #     i+=1
 
     
-    env = SimpleRobotEnvironmentWP()
+    env = SimpleRobotEnviromentCO(num_obstacles=6, init_distance=0.3)
+    # env = SimpleRobotEnviroment(num_obstacles=1, init_distance=0.9)
     obs = env.reset()
     done = False
     print(obs)
@@ -179,8 +195,9 @@ if __name__ == '__main__':
         plt.show()
 
     x = env.render()
-    displayImage(x)
+    # displayImage(x)
     
+    images = [x]
     for i in range(300):
         print(i)
         if not done:
@@ -191,11 +208,13 @@ if __name__ == '__main__':
             print("Observation:",obs)
             print("Reward: ", reward)
             print("Done",done)
+            images.append(env.render())
         else:
             print("Done")
 
 
-    x = env.render()
-    displayImage(x)
+    # x = env.render()
+    # displayImage(x)
+    convert_images_to_video(images)
 
     

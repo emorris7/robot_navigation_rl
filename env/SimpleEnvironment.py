@@ -40,7 +40,7 @@ class SimpleRobotEnviroment(Env):
     }
 
     # def __init__(self, horizon, render_mode: Optional[str] = None):
-    def __init__(self, config: Optional[EnvContext]=None):
+    def __init__(self, config: Optional[EnvContext]=None, num_obstacles = 1, init_distance = 0.7):
         # define your environment
         # action space, observation space
 
@@ -58,35 +58,36 @@ class SimpleRobotEnviroment(Env):
             assert (self.render_mode != None), "Horizon value must be specified to initilialise the environment"
 
         # Set the tolerance values for the angle and distance, changed from 0.01
-        self.goal_tolerance = 0.04
+        self.goal_tolerance = 0.01
         # Set the iteration on which the tolerance value was last changed, for curriculum learning
         self.tolerance_step_change = 0
 
         # Set the number of obstacles and the initial distance from the goal
-        self.num_obstacles = 1
-        self.init_distance_from_goal = 0.7
+        self.num_obstacles = num_obstacles
+        self.init_distance_from_goal = init_distance
 
         # Set the grid size that we're operating in, use continuous gridspace
         self.grid_size = 2.0
 
         # List of obstacles in the environment
-        self.obstacles = []
-        for i in range(self.num_obstacles):
-            # Set now and randomly initialise later in code
-            self.obstacles.append(Obstacle(0.6, 0.85, 0.1))
+        self.obstacles = [Obstacle(0.4, 1.4, 0.1), Obstacle(0.4, 1.2, 0.1), Obstacle(0.4, 1.0, 0.1), Obstacle(0.4, 0.8, 0.1), Obstacle(0.4, 0.6, 0.1), Obstacle(0.6, 0.6, 0.1), Obstacle(0.8, 0.6, 0.1), Obstacle(1.0, 0.6, 0.1), Obstacle(1.2, 0.6, 0.1), Obstacle(1.4, 0.6, 0.1), Obstacle(1.4, 0.4, 0.1), Obstacle(1.4, 0.2, 0.1), Obstacle(1.4, 0.8, 0.1), Obstacle(1.4, 1.0, 0.1), Obstacle(1.4, 1.2, 0.1), Obstacle(1.4, 1.4, 0.1), Obstacle(1.2, 1.4, 0.1), Obstacle(1.0, 1.4, 0.1), Obstacle(0.8, 1.4, 0.1), Obstacle(0.8, 1.2, 0.1), Obstacle(0.8, 1.0, 0.1)]
+        # self.obstacles = []
+        # for i in range(self.num_obstacles):
+        #     # Set now and randomly initialise later in code
+        #     self.obstacles.append(Obstacle(0.6, 0.85, 0.1))
 
         # TODO: randomly initiliase, ensure it does not clash with obstacles and is reachable (i.e. the robot is still fully in the grid if it reaches the space)
         # Goal position, set now and will randomly initiliase and ensure that it does not clash with any obstacles
-        self.goal_position = np.array([1.0,1.0,np.pi])
+        self.goal_position = np.array([1.2,1.0,np.pi])
 
         # Robot start position, set now and randomly initiliase and ensure that it does not clash with any obstacles
         self.num_sensors = 7
         self.sensor_angles = np.linspace(-np.pi/2, np.pi/2, self.num_sensors)
         # Robot position needs to be a float
-        self.robot = SimpleRobot(np.array([0.7,0.7,0.0]), ROBOT_RADIUS)
+        self.robot = SimpleRobot(np.array([0.1,0.1,0.0]), ROBOT_RADIUS)
 
         # Randomly initialise goal, robot and obstacle positions
-        self.reset_positions()
+        # self.reset_positions()
 
         # Define observation space, [current position, goal position, sensor readings (check how many from assignment/Prorok code) (paper uses 30)]
         observation_shape = self.num_sensors + 6
@@ -198,9 +199,9 @@ class SimpleRobotEnviroment(Env):
                 info_dict["Crash"] = 1
             # if the robot reaches the goal (is within some distance of the goal position)
             # elif distance <= GOAL_DISTANCE and angle_diff <= GOAL_ANGLE:
-            elif distance <= self.goal_tolerance and angle_diff <= self.goal_tolerance:
+            # elif distance <= self.goal_tolerance and angle_diff <= self.goal_tolerance:
             # elif distance <= GOAL_DISTANCE:
-            # elif distance <= self.goal_tolerance:
+            elif distance <= self.goal_tolerance:
                 done = True
                 # reward += 1400
                 reward += 200
@@ -223,16 +224,14 @@ class SimpleRobotEnviroment(Env):
         # reset your environment
 
         # Reset goal, robot and obstacle positions
-        self.reset_positions()
-        # self.robot.set_pose(np.array([0.7,0.7,0.0]))
+        # self.reset_positions()
+        self.robot.set_pose(np.array([0.1,0.1,0.0]))
 
         # Random bits and bobs
         self.steps_beyond_terminated = None
         self.screen = None
         self.clock = None
 
-        # print("ROBOT: ", self.robot.pose)
-        # print("GOAL: ", self.goal_position)
         return self.observation()
 
     def render(self):
@@ -402,19 +401,7 @@ class SimpleRobotEnviroment(Env):
 
     # observation is [robot position, goal position, sensor readings] (based on flocking example)
     def observation(self):
-        # # print("OBSERVATION", self.robot.pose)
-        # robot_x_y = self.robot.pose[:2]
-        # goal_position_x_y = self.goal_position[:2]
-        # # Distance to goal
-        # distance = np.linalg.norm( goal_position_x_y - robot_x_y)
-        # # Angle to goal
-        # line_angle = np.arctan2(goal_position_x_y[Y]- robot_x_y[Y], goal_position_x_y[X] - robot_x_y[X])
-        # # negative means distance is anticlockwise, postive means difference is clockwise
-        # goal_angle = self.robot.pose[YAW] - line_angle
         sensor_readings = [self.ray_trace(a, self.robot.pose) for a in self.sensor_angles]
-        # Make sensor reading in MAX_DISTANCE if infinity or over the max sensor reading distance
-        # filter_sensor_readings = [MAX_SENSOR_DISTANCE if x == float('inf') else x for x in sensor_readings]
-        # return np.concatenate((self.robot.pose, self.goal_position, filter_sensor_readings))
         return np.concatenate((self.robot.pose, self.goal_position, sensor_readings))
 
     def reset_positions(self):
